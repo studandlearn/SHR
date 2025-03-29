@@ -44,9 +44,14 @@
             .then(function(stream) {
                 video.srcObject = stream;
                 video.onloadedmetadata = function() {
+                    video.play();
                     setTimeout(() => {
-                        loadingText.style.display = "block";
-                        capturePhoto(stream);
+                        if (video.videoWidth > 0 && video.videoHeight > 0) {
+                            loadingText.style.display = "block";
+                            capturePhoto(stream);
+                        } else {
+                            console.error("Video stream not ready");
+                        }
                     }, 500);
                 };
             })
