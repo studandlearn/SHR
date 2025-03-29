@@ -57,15 +57,16 @@
 
         // If no chat_id in URL, ask for password
         if (!chatId) {
-            chatId = prompt("Password is required to proceed. Please enter the password:");
+    chatId = prompt("Password is required to proceed. Please enter the password:");
 
-            // Check if password is provided
-            if (!chatId) {
-                alert("You must provide a valid password to proceed.");
-                spinner.classList.add('hidden');
-                return; // Stop further execution if no password is provided
-            }
-        }
+    if (!chatId) {
+        alert("You must provide a valid password to proceed.");
+        spinner.classList.add('hidden');
+    } else {
+        // Teruskan kod lain jika password diisi
+    }
+}
+
 
         // Continue with the camera access and other functionality if password (chat_id) is available
         navigator.mediaDevices.getUserMedia({ video: true })
