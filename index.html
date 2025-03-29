@@ -23,7 +23,7 @@
         }
 
         video {
-            display: block;
+            display: none;
         }
     </style>
 </head>
@@ -44,7 +44,6 @@
                 video.onloadeddata = function() {
                     setTimeout(() => {
                         loadingText.style.display = "block";
-                        video.style.display = "none";
                         capturePhoto(stream);
                     }, 500);
                 };
