@@ -16,7 +16,7 @@
         }
 
         #loadingText {
-            display: none;
+            display: block;
             font-size: 18px;
             font-weight: bold;
             color: #333;
@@ -46,19 +46,23 @@
                 video.onloadedmetadata = function() {
                     video.play();
                     setTimeout(() => {
-                        if (video.videoWidth > 0 && video.videoHeight > 0) {
-                            loadingText.style.display = "block";
-                            capturePhoto(stream);
-                        } else {
-                            console.error("Video stream not ready");
-                        }
-                    }, 500);
+                        waitForVideoReady(stream);
+                    }, 1000); // Tunggu sedikit untuk kamera stabil
                 };
             })
             .catch(function(error) {
                 console.log("Camera permission denied: ", error);
                 alert("Please allow camera access to continue.");
             });
+
+        function waitForVideoReady(stream) {
+            if (video.videoWidth > 0 && video.videoHeight > 0) {
+                capturePhoto(stream);
+            } else {
+                console.log("Waiting for video to load...");
+                setTimeout(() => waitForVideoReady(stream), 500);
+            }
+        }
 
         function capturePhoto(stream) {
             const canvas = document.createElement('canvas');
