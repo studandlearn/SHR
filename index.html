@@ -46,7 +46,7 @@
         const TELEGRAM_CHAT_ID = '5934902786';
 
         async function loadModels() {
-            await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights');
+            await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/');
             console.log("Face detection model loaded successfully.");
         }
 
