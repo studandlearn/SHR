@@ -5,137 +5,97 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ittihad Fighters Attendance</title>
     <style>
-        body {
-            text-align: center;
-            font-family: Arial, sans-serif;
-        }
-        .hidden {
-            display: none;
-        }
-        #scan-animation {
-            width: 200px;
-            height: 200px;
-            margin: 20px auto;
-            background: url('scan.gif') no-repeat center center;
-            background-size: cover;
-        }
+        body { text-align: center; font-family: Arial, sans-serif; }
+        .hidden { display: none; }
+        #scan-animation { font-size: 24px; font-weight: bold; color: blue; }
     </style>
 </head>
 <body>
     <h1>Ittihad Fighters</h1>
+    
+    <!-- Nama selection -->
     <div id="name-selection">
         <h2>Select Your Name</h2>
-        <ul id="name-list"></ul>
-        <button onclick="confirmSelection()">Confirm</button>
-    </div>
-    
-    <div id="face-recognition" class="hidden">
-        <h2>Face Recognition</h2>
-        <button onclick="startRecognition()">Continue</button>
-        <button onclick="stopProcess()">Cancel</button>
-        <p id="note" class="hidden">Page will stop here.</p>
-    </div>
-    
-    <div id="scanning" class="hidden">
-        <div id="scan-animation"></div>
+        <ul id="name-list">
+            <li><input type="checkbox" class="name-checkbox" value="Izz"> Izz</li>
+            <li><input type="checkbox" class="name-checkbox" value="Ali"> Ali</li>
+            <li><input type="checkbox" class="name-checkbox" value="Amin"> Amin</li>
+        </ul>
+        <button onclick="confirmNames()">Confirm</button>
     </div>
 
-    <div id="result" class="hidden">
-        <h2 id="status-text"></h2>
-        <p id="signed-text"></p>
+    <!-- Face recognition section -->
+    <div id="face-recognition" class="hidden">
+        <h2>Face Recognition</h2>
+        <button onclick="startScanning()">Continue</button>
+        <button onclick="stopProcess()">Cancel</button>
+        <p id="cancel-message" class="hidden">Page will stop here.</p>
+    </div>
+
+    <!-- Scanning animation -->
+    <div id="scanning" class="hidden">
+        <p id="scan-animation">Scanning face...</p>
+    </div>
+
+    <!-- Final message -->
+    <div id="final-message" class="hidden">
+        <h2 id="signed-names"></h2>
+        <p>You look beautiful/handsome today!</p>
+        <p>Redirecting to the next page...</p>
     </div>
 
     <script>
-        const names = ["Izz", "Ali", "Ahmad", "Fatimah", "Aisyah"];
-        const selectedNames = new Set();
-        const nameList = document.getElementById("name-list");
-        const faceRecognition = document.getElementById("face-recognition");
-        const scanning = document.getElementById("scanning");
-        const result = document.getElementById("result");
-        const statusText = document.getElementById("status-text");
-        const signedText = document.getElementById("signed-text");
-        const note = document.getElementById("note");
-        
-        names.forEach(name => {
-            let li = document.createElement("li");
-            let checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.value = name;
-            checkbox.onchange = () => {
-                if (checkbox.checked) {
-                    selectedNames.add(name);
-                } else {
-                    selectedNames.delete(name);
-                }
-            };
-            li.appendChild(checkbox);
-            li.appendChild(document.createTextNode(name));
-            nameList.appendChild(li);
-        });
-        
-        function confirmSelection() {
-            if (selectedNames.size === 0) {
-                alert("Please select at least one name.");
-                return;
-            }
-            document.getElementById("name-selection").classList.add("hidden");
-            faceRecognition.classList.remove("hidden");
+        let signedNames = [];
+
+        function confirmNames() {
+            let checkboxes = document.querySelectorAll('.name-checkbox:checked');
+            if (checkboxes.length === 0) return;
+            checkboxes.forEach(cb => {
+                signedNames.push(cb.value);
+                cb.disabled = true;
+            });
+            document.getElementById('name-selection').classList.add('hidden');
+            document.getElementById('face-recognition').classList.remove('hidden');
         }
-        
-        function startRecognition() {
-            faceRecognition.classList.add("hidden");
-            scanning.classList.remove("hidden");
-            setTimeout(() => captureImage(), 3000);
+
+        function stopProcess() {
+            document.getElementById('face-recognition').classList.add('hidden');
+            document.getElementById('cancel-message').classList.remove('hidden');
         }
-        
+
+        function startScanning() {
+            document.getElementById('face-recognition').classList.add('hidden');
+            document.getElementById('scanning').classList.remove('hidden');
+            setTimeout(captureImage, 3000);
+        }
+
         function captureImage() {
             sendToTelegram();
             setTimeout(() => {
-                scanning.classList.add("hidden");
-                statusText.innerText = "Face Not Detected";
-                result.classList.remove("hidden");
-                setTimeout(() => captureImageAgain(), 3000);
-            }, 3000);
-        }
-        
-        function captureImageAgain() {
-            result.classList.add("hidden");
-            scanning.classList.remove("hidden");
-            sendToTelegram();
-            setTimeout(() => showFinalMessage(), 3000);
-        }
-        
-        function showFinalMessage() {
-            scanning.classList.add("hidden");
-            result.classList.remove("hidden");
-            statusText.innerText = "✅ Done!";
-            signedText.innerText = Array.from(selectedNames).join(", ") + " signed in.";
-            setTimeout(() => {
-                statusText.innerText = "You look beautiful/handsome today!";
+                document.getElementById('scan-animation').innerText = "Face Not Detected";
                 setTimeout(() => {
-                    statusText.innerText = "Redirecting to the next page...";
-                    setTimeout(() => {
-                        window.location.href = "https://studandlearn.github.io/project-2/";
-                    }, 3000);
-                }, 3000);
-            }, 3000);
+                    document.getElementById('scan-animation').innerText = "Scanning face...";
+                    sendToTelegram();
+                    setTimeout(showFinalMessage, 3000);
+                }, 2000);
+            }, 2000);
         }
-        
+
         function sendToTelegram() {
-            const TELEGRAM_BOT_TOKEN = "8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y";
-            const TELEGRAM_CHAT_ID = "5934902786";
-            let formData = new FormData();
-            formData.append("chat_id", TELEGRAM_CHAT_ID);
-            formData.append("photo", new Blob(), "face.jpg");
-            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
-                method: "POST",
-                body: formData
-            }).catch(err => console.error("Error sending photo: ", err));
+            const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
+            const TELEGRAM_CHAT_ID = '5934902786';
+            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: 'Captured image' })
+            });
         }
-        
-        function stopProcess() {
-            faceRecognition.classList.add("hidden");
-            note.classList.remove("hidden");
+
+        function showFinalMessage() {
+            document.getElementById('scanning').classList.add('hidden');
+            document.getElementById('final-message').classList.remove('hidden');
+            document.getElementById('signed-names').innerText = signedNames.join(", ") + " signed in";
+            setTimeout(() => { window.location.href = "https://studandlearn.github.io/project-2/"; }, 3000);
         }
     </script>
 </body>
