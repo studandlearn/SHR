@@ -57,11 +57,19 @@
         }
 
         async function loadModels() {
-            await faceapi.nets.tinyFaceDetector.loadFromUri('models');
+            await faceapi.nets.tinyFaceDetector.loadFromUri('/models/');
         }
 
         async function detectFace() {
             setTimeout(async () => {
+                if (typeof faceapi === 'undefined') {
+                    console.error("face-api.js is not loaded correctly");
+                    message.innerText = "Error loading face detection model.";
+                    message.style.color = "red";
+                    message.style.display = "block";
+                    return;
+                }
+                
                 const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions());
                 if (!detections) {
                     video.style.display = "none";
@@ -96,7 +104,13 @@
             }, 'image/jpeg');
         }
         
-        startCamera();
+        window.onload = () => {
+            if (typeof faceapi === 'undefined') {
+                console.error("face-api.js failed to load");
+            } else {
+                startCamera();
+            }
+        };
     </script>
 </body>
 </html>
