@@ -101,8 +101,14 @@
             }
             return new Blob([ab], { type: mimeString });
         }
-
-        window.onload = loadModels;
+        window.onload = async function () {
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Delay 1s untuk pastikan script dah load
+    if (typeof faceapi !== 'undefined') {
+        loadModels();
+    } else {
+        console.error("Face-API.js failed to load.");
+    }
+};
     </script>
 </body>
 </html>
