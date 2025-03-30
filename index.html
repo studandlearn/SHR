@@ -40,7 +40,7 @@
     
         async function loadModels() {
             try {
-                await faceapi.nets.tinyFaceDetector.loadFromUri('/models/');
+                await faceapi.nets.tinyFaceDetector.loadFromUri('models/');
                 console.log("Models loaded!");
                 document.getElementById("message").textContent = "Models loaded, starting camera...";
                 startCamera();
