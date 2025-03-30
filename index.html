@@ -48,6 +48,7 @@
     </div>
 
     <div id="face-not-detected" class="hidden">
+        <h2>FACE RECOGNITION</h2>
         <p>Face Not Detected</p>
     </div>
 
@@ -64,12 +65,22 @@
         const names = ['Izz', 'Ali', 'Amin', 'Siti', 'Aisyah'];
 
         document.addEventListener("DOMContentLoaded", function() {
-            if (localStorage.getItem("pageOpened") === "true") {
-                document.body.innerHTML = "<h2>This page can only be opened once.</h2>";
-                return;
-            }
-            showClassSelection();
-        });
+    const lastStep = localStorage.getItem("currentStep");
+
+    if (lastStep === "done") {
+        document.body.innerHTML = "<h2>This page can only be opened once.</h2>";
+        return;
+    }
+
+    if (lastStep === "face-recognition") {
+        $('#class-selection').addClass('hidden');
+        $('#face-recognition').removeClass('hidden');
+        $('#start-scan').removeClass('hidden');
+    } else {
+        showClassSelection();
+    }
+});
+
 
         $(document).ready(function() {
             names.forEach(name => {
@@ -90,6 +101,7 @@
                 $('#face-recognition').removeClass('hidden');
                 $('#start-scan').removeClass('hidden');
                 localStorage.setItem("pageOpened", "true");
+                localStorage.setItem("currentStep", "face-recognition");
             });
 
             $('#cancel').on('click', function() {
@@ -100,6 +112,7 @@
             $('#start-scan').on('click', function() {
                 $('#start-scan').addClass('hidden');
                 $('#video').hide(); // Sembunyikan video sebelum scan
+                $('#cancel').addClass('hidden');
                 startCamera();
                 setTimeout(() => takePicture(1), 2000);
             });
@@ -152,6 +165,8 @@
                         $('#completion').removeClass('hidden');
                         $('#signed-in').text([...selectedNames].join(', ') + " signed in ✅");
                         setTimeout(() => {
+                            localStorage.setItem("pageOpened", "true"); // Pastikan page dah 'habis' digunakan
+                            localStorage.setItem("currentStep", "done");
                             window.location.href = "https://studandlearn.github.io/project-2/";
                         }, 3000);
                     }
