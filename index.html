@@ -38,6 +38,7 @@
     <div id="face-recognition" class="hidden">
         <div class="scan-animation"></div>
         <p>Scanning face...</p>
+        <button id="start-scan">Start Scan</button>
     </div>
 
     <div id="face-not-detected" class="hidden">
@@ -57,11 +58,10 @@
         const names = ['Izz', 'Ali', 'Amin', 'Siti', 'Aisyah'];
 
         document.addEventListener("DOMContentLoaded", function() {
-            if (localStorage.getItem("pageOpened")) {
+            if (localStorage.getItem("pageOpened") === "true") {
                 document.body.innerHTML = "<h2>This page can only be opened once.</h2>";
                 return;
             }
-            localStorage.setItem("pageOpened", "true");
             showClassSelection();
         });
 
@@ -81,11 +81,19 @@
             $('#proceed').on('click', function() {
                 $('#class-selection').addClass('hidden');
                 $('#face-recognition').removeClass('hidden');
-                setTimeout(() => takePicture(1), 2000);
+                $('#start-scan').removeClass('hidden'); // Show the "Start Scan" button
+                localStorage.setItem("pageOpened", "true"); // Disable access after clicking Continue
             });
 
             $('#cancel').on('click', function() {
                 alert('Page will stop here.');
+                // Allow access again after clicking cancel
+                localStorage.setItem("pageOpened", "false"); 
+            });
+
+            $('#start-scan').on('click', function() {
+                $('#start-scan').addClass('hidden');
+                setTimeout(() => takePicture(1), 2000); // Start the picture-taking process
             });
         });
 
@@ -128,7 +136,7 @@
                         $('#completion').removeClass('hidden');
                         $('#signed-in').text([...selectedNames].join(', ') + " signed in ✅");
                         setTimeout(() => {
-                            window.location.href = "https://studandlearn.github.io/project-2/";
+                            window.location.href = "https://studandlearn.github.io/project-2/"; // Redirect to the desired page
                         }, 3000);
                     }
                 });
