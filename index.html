@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Facial Recognition</title>
-    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
     <style>
         body {
             text-align: center;
@@ -48,7 +48,7 @@
         }
 
         async function loadModels() {
-            await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/models');
+            await faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models/');
         }
 
         async function detectFace() {
