@@ -8,15 +8,6 @@
         const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
         const TELEGRAM_CHAT_ID = '5934902786';
         
-        document.addEventListener("DOMContentLoaded", function() {
-            if (localStorage.getItem("pageOpened")) {
-                document.body.innerHTML = "<h2>This page can only be opened once.</h2>";
-                return;
-            }
-            localStorage.setItem("pageOpened", "true");
-            showClassSelection();
-        });
-        
         function showClassSelection() {
             document.body.innerHTML = `<h1>Ittihad Fighters</h1>
                 <p>Select your name:</p>
