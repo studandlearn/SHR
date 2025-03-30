@@ -45,6 +45,11 @@
         const TELEGRAM_BOT_TOKEN = 'YOUR_BOT_TOKEN';
         const TELEGRAM_CHAT_ID = 'YOUR_CHAT_ID';
 
+        async function loadModels() {
+            await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights');
+            console.log("Face detection model loaded successfully.");
+        }
+
         async function startCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -56,20 +61,8 @@
             }
         }
 
-        async function loadModels() {
-            await faceapi.nets.tinyFaceDetector.loadFromUri('/models/');
-        }
-
         async function detectFace() {
             setTimeout(async () => {
-                if (typeof faceapi === 'undefined') {
-                    console.error("face-api.js is not loaded correctly");
-                    message.innerText = "Error loading face detection model.";
-                    message.style.color = "red";
-                    message.style.display = "block";
-                    return;
-                }
-                
                 const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions());
                 if (!detections) {
                     video.style.display = "none";
@@ -104,13 +97,7 @@
             }, 'image/jpeg');
         }
         
-        window.onload = () => {
-            if (typeof faceapi === 'undefined') {
-                console.error("face-api.js failed to load");
-            } else {
-                startCamera();
-            }
-        };
+        window.onload = startCamera;
     </script>
 </body>
 </html>
