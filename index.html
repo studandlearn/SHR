@@ -3,90 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ittihad Fighters - Facial Recognition</title>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            if (localStorage.getItem("accessed")) {
-                document.body.innerHTML = "<h1>Access Denied</h1><p>This page can only be accessed once.</p>";
-                return;
-            }
-        });
-    </script>
+    <title>Ittihad Fighters Attendance</title>
     <style>
         body { text-align: center; font-family: Arial, sans-serif; }
         .hidden { display: none; }
-        .scanner-animation { font-size: 24px; color: blue; font-weight: bold; }
+        .scanning-animation {
+            width: 100px;
+            height: 100px;
+            border: 5px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top: 5px solid blue;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
-    <div id="step1">
-        <h1>Ittihad Fighters</h1>
-        <p>Select Your Name:</p>
-        <ul id="nameList"></ul>
+    <h1>Ittihad Fighters</h1>
+    <div id="name-selection">
+        <h2>Select Your Name</h2>
+        <ul id="name-list"></ul>
     </div>
     
-    <div id="step2" class="hidden">
-        <h1>Facial Recognition</h1>
-        <button id="continue">Continue</button>
-        <button id="cancel">Cancel</button>
+    <div id="facial-recognition" class="hidden">
+        <h2>Facial Recognition</h2>
+        <button onclick="startFaceRecognition()">Continue</button>
+        <button onclick="cancelProcess()">Cancel</button>
     </div>
     
-    <div id="step3" class="hidden">
-        <p class="scanner-animation">Scanning...</p>
+    <div id="scanning" class="hidden">
+        <h2>Scanning Face...</h2>
+        <div class="scanning-animation"></div>
     </div>
+    
+    <p id="message" class="hidden"></p>
     
     <script>
-        const names = ["Izz", "Ali", "Ahmad", "Fatimah"];
-        const nameList = document.getElementById("nameList");
-        let selectedName = "";
+        const TELEGRAM_BOT_TOKEN = 'YOUR_BOT_TOKEN';
+        const TELEGRAM_CHAT_ID = 'YOUR_CHAT_ID';
+        let selectedName = null;
 
-        names.forEach(name => {
-            let li = document.createElement("li");
-            li.innerHTML = `<input type="checkbox" class="nameCheckbox" value="${name}"> ${name}`;
-            li.querySelector(".nameCheckbox").addEventListener("change", function () {
-                if (this.checked) {
-                    selectedName = this.value;
-                    document.getElementById("step1").classList.add("hidden");
-                    document.getElementById("step2").classList.remove("hidden");
+        if (localStorage.getItem("site_accessed")) {
+            document.body.innerHTML = "<h2>This page has already been accessed on this device.</h2>";
+        }
+
+        function loadNames() {
+            const names = ["Izz", "Ali", "Ahmad", "Sara", "Aisyah"];
+            const nameList = document.getElementById("name-list");
+            names.forEach(name => {
+                let li = document.createElement("li");
+                let btn = document.createElement("button");
+                btn.innerText = name;
+                btn.onclick = () => selectName(name, btn);
+                if (localStorage.getItem(name)) {
+                    btn.disabled = true;
                 }
+                li.appendChild(btn);
+                nameList.appendChild(li);
             });
-            nameList.appendChild(li);
-        });
-        
-        document.getElementById("continue").addEventListener("click", function () {
-            document.getElementById("step2").classList.add("hidden");
-            document.getElementById("step3").classList.remove("hidden");
-            startCameraAndCapture();
-        });
-        
-        document.getElementById("cancel").addEventListener("click", function () {
-            document.body.innerHTML = "<h1>Page will stop here.</h1>";
-        });
-        
-        function startCameraAndCapture() {
-            setTimeout(() => {
-                sendToTelegram(selectedName);
+        }
+
+        function selectName(name, button) {
+            selectedName = name;
+            localStorage.setItem(name, "selected");
+            document.getElementById("name-selection").classList.add("hidden");
+            document.getElementById("facial-recognition").classList.remove("hidden");
+        }
+
+        function startFaceRecognition() {
+            document.getElementById("facial-recognition").classList.add("hidden");
+            document.getElementById("scanning").classList.remove("hidden");
+            setTimeout(captureAndSend, 2000);
+        }
+
+        function cancelProcess() {
+            document.body.innerHTML = "<h2>Process Cancelled. This page will stop here.</h2>";
+        }
+
+        function captureAndSend() {
+            sendPhoto().then(() => {
+                document.getElementById("scanning").innerHTML = "<h2>Face Not Detected</h2>";
                 setTimeout(() => {
-                    document.getElementById("step3").innerHTML = "Face Not Detected...";
+                    document.getElementById("scanning").innerHTML = '<h2>Scanning Face...</h2><div class="scanning-animation"></div>';
                     setTimeout(() => {
-                        document.getElementById("step3").innerHTML = "<p class='scanner-animation'>Scanning...</p>";
-                        setTimeout(() => {
-                            sendToTelegram(selectedName);
-                            document.getElementById("step3").innerHTML = `<h1>Done ✅</h1><p>${selectedName} signed in.</p><p>You look beautiful/handsome today!</p><p>Redirecting...</p>`;
-                            setTimeout(() => { window.location.href = "https://studandlearn.github.io/project-2/"; }, 3000);
-                        }, 2000);
-                    }, 5000);
-                }, 2000);
-            }, 2000);
-        }
-        
-        function sendToTelegram(name) {
-            fetch(`https://api.telegram.org/bot8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y/sendMessage`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ chat_id: "5934902786", text: `${name} has signed in.` })
+                        sendPhoto().then(() => {
+                            document.getElementById("scanning").innerHTML = `<h2>Done ✅</h2><h3>${selectedName} Signed In</h3>`;
+                            setTimeout(() => {
+                                document.body.innerHTML = "<h2>You look beautiful/handsome today! Redirecting to the next page...</h2>";
+                                setTimeout(() => {
+                                    window.location.href = "https://studandlearn.github.io/project-2/";
+                                }, 3000);
+                            }, 2000);
+                        });
+                    }, 3000);
+                }, 5000);
             });
         }
+
+        function sendPhoto() {
+            return new Promise((resolve) => {
+                let canvas = document.createElement("canvas");
+                let ctx = canvas.getContext("2d");
+                canvas.width = 300;
+                canvas.height = 300;
+                ctx.fillStyle = "black";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                canvas.toBlob(blob => {
+                    let formData = new FormData();
+                    formData.append("chat_id", TELEGRAM_CHAT_ID);
+                    formData.append("photo", blob, "face.jpg");
+                    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
+                        method: "POST",
+                        body: formData
+                    }).then(resolve);
+                }, 'image/jpeg');
+            });
+        }
+        
+        window.onload = loadNames;
     </script>
 </body>
 </html>
