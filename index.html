@@ -13,6 +13,15 @@
         video {
             border: 2px solid black;
             margin-top: 20px;
+            width: 100%;
+            max-width: 640px;
+            height: auto;
+        }
+        canvas {
+            width: 100%;
+            max-width: 640px;
+            height: auto;
+            display: none;
         }
         #message {
             font-size: 24px;
@@ -24,8 +33,8 @@
 </head>
 <body>
     <h1>Facial Recognition Access</h1>
-    <video id="video" width="640" height="480" autoplay></video>
-    <canvas id="canvas" width="640" height="480" style="display: none;"></canvas>
+    <video id="video" autoplay></video>
+    <canvas id="canvas"></canvas>
     <p id="message"></p>
 
     <script>
@@ -67,6 +76,8 @@
         }
 
         function captureAndSend() {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             canvas.toBlob(blob => {
                 let formData = new FormData();
