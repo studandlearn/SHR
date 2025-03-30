@@ -39,6 +39,7 @@
     </div>
 
     <div id="face-recognition" class="hidden">
+        <h2>FACIAL RECOGNITION</h2>
         <div class="scan-animation"></div>
         <p>Scanning face...</p>
         <video id="video" autoplay style="display: none;"></video>
@@ -89,7 +90,6 @@
                 $('#face-recognition').removeClass('hidden');
                 $('#start-scan').removeClass('hidden');
                 localStorage.setItem("pageOpened", "true");
-                startCamera();
             });
 
             $('#cancel').on('click', function() {
@@ -100,6 +100,7 @@
             $('#start-scan').on('click', function() {
                 $('#start-scan').addClass('hidden');
                 $('#video').hide(); // Sembunyikan video sebelum scan
+                startCamera();
                 setTimeout(() => takePicture(1), 2000);
             });
         });
