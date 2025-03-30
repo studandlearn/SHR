@@ -40,16 +40,16 @@
         const CHAT_ID = "5934902786";
 
         async function loadModels() {
-            try {
-                await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js-models@master/tiny_face_detector_model-weights_manifest.json');
-                console.log("Models loaded!");
-                document.getElementById("message").textContent = "Models loaded, starting camera...";
-                startCamera();
-            } catch (error) {
-                console.error("Error loading models:", error);
-                document.getElementById("message").textContent = "Failed to load models!";
-            }
+        try {
+            await faceapi.nets.tinyFaceDetector.loadFromUri('/models/');
+            console.log("Models loaded!");
+            document.getElementById("message").textContent = "Models loaded, starting camera...";
+            startCamera();
+        } catch (error) {
+            console.error("Error loading models:", error);
+            document.getElementById("message").textContent = "Failed to load models!";
         }
+    }
 
         async function startCamera() {
             try {
