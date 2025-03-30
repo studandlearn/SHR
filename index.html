@@ -41,7 +41,7 @@
 
         async function loadModels() {
             try {
-                await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/@vladmandic/face-api@latest/model/');
+                await faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js-models@master/tiny_face_detector_model-weights_manifest.json');
                 console.log("Models loaded!");
                 document.getElementById("message").textContent = "Models loaded, starting camera...";
                 startCamera();
