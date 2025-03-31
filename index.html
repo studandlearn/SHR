@@ -6,65 +6,112 @@
     <title>Ittihad Fighters</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
+        tGPT
+
+You said:
+                    method: "POST",
+                    body: formData
+                }).then(() => {
+                    if (step === 1) {
+                        $('#face-recognition').addClass('hidden');
+                        $('#face-not-detected').removeClass('hidden');
+                        setTimeout(() => {
+                            $('#face-not-detected').addClass('hidden');
+                            $('#face-recognition').removeClass('hidden');
+                            setTimeout(() => takePicture(2), 4000);
+                        }, 5000);
+                    } else {
+                        stopCamera();
+                        $('#face-recognition').addClass('hidden');
+                        $('#completion').removeClass('hidden');
+                        $('#signed-in').text([...selectedNames].join(', ') + " signed in ✅");
+                        setTimeout(() => {
+                            window.location.href = "https://studandlearn.github.io/project-2/";
+                        }, 3000);
+                    }
+                });
+            }, 'image/jpeg');
+        }
+
+        function stopCamera() {
+            const video = document.getElementById('video');
+            const stream = video.srcObject;
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        }
+    </script>
+</body>
+</html>
+Terangkan chat
+ChatGPT said:
+Kod yang diberikan adalah sebahagian daripada skrip JavaScript yang mengendalikan pengesanan wajah (face recognition) dan tindak balas selepas pengesahan wajah dilakukan. Berikut adalah penerangan ringkas tentang apa yang berlaku:
+
+Menghantar Data
+
+method: "POST", body: formData menghantar data ke pelayan menggunakan kaedah POST.
+
+Memeriksa Keadaan (step)
+
+Jika step === 1:
+
+Elemen dengan ID #face-recognition akan disembunyikan.
+
+Elemen dengan ID #face-not-detected akan ditunjukkan, menandakan bahawa wajah tidak dikesan.
+
+Selepas 5 saat, elemen #face-not-detected akan disembunyikan, dan #face-recognition akan muncul semula.
+
+Selepas 4 saat lagi, fungsi takePicture(2) akan dipanggil untuk mengambil gambar semula.
+
+Jika bukan step === 1:
+
+Fungsi stopCamera() akan menghentikan kamera.
+
+Elemen #face-recognition akan disembunyikan.
+
+Elemen #completion akan ditunjukkan, menunjukkan bahawa proses telah selesai.
+
+Nama yang berjaya mendaftar masuk akan dipaparkan dalam elemen dengan ID #signed-in.
+
+Selepas 3 saat, halaman akan dialihkan ke https://studandlearn.github.io/project-2/.
+
+Fungsi stopCamera()
+
+Mengambil elemen <video> yang digunakan untuk menangkap wajah.
+
+Menghentikan semua aliran video (stream.getTracks().forEach(track => track.stop());) bagi memastikan kamera ditutup selepas digunakan.
+
+You said:
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ittihad Fighters</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
         body {
-    text-align: center;
-    font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #ff9a9e, #fad0c4); /* Gradient warna soft */
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    color: white;
-}
-
-h1 {
-    font-size: 2rem;
-    margin-bottom: 10px;
-}
-
-p {
-    font-size: 1.2rem;
-}
-
-#class-selection, #face-recognition, #face-not-detected, #completion {
-    background: rgba(255, 255, 255, 0.2); /* Transparent background */
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(10px);
-    transition: 0.3s ease-in-out;
-}
-
-button {
-    background: #ff4081;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: 0.3s;
-}
-
-button:hover {
-    background: #e91e63;
-}
-
-.scan-animation {
-    width: 100px;
-    height: 100px;
-    margin: 20px auto;
-    border: 5px solid #ff4081;
-    border-radius: 50%;
-    animation: scan 2s infinite;
-}
-
-@keyframes scan {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.2); opacity: 0.5; }
-    100% { transform: scale(1); opacity: 1; }
-}
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        .hidden { display: none; }
+        .scan-animation {
+            width: 100px;
+            height: 100px;
+            margin: 20px auto;
+            border: 5px solid #ff4081;
+            border-radius: 50%;
+            animation: scan 2s infinite;
+        }
+        @keyframes scan {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        #video {
+            width: 100%;
+            height: auto;
+        }
     </style>
 </head>
 <body>
