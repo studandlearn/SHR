@@ -50,6 +50,8 @@
     <div id="face-not-detected" class="hidden">
         <h2>FACE RECOGNITION</h2>
         <p>Face Not Detected</p>
+        <button id="try-again">Try Again</button>
+        <button id="cancel-scan">Cancel</button>
     </div>
 
     <div id="completion" class="hidden">
@@ -157,11 +159,17 @@
                     if (step === 1) {
                         $('#face-recognition').addClass('hidden');
                         $('#face-not-detected').removeClass('hidden');
-                        setTimeout(() => {
-                            $('#face-not-detected').addClass('hidden');
-                            $('#face-recognition').removeClass('hidden');
-                            setTimeout(() => takePicture(2), 4000);
-                        }, 5000);
+                        $('#try-again').on('click', function() {
+    $('#face-not-detected').addClass('hidden');
+    $('#face-recognition').removeClass('hidden');
+    takePicture(2);
+});
+
+// Jika user tekan "Cancel"
+$('#cancel-scan').on('click', function() {
+    alert('Page will stop here.');
+    localStorage.setItem("pageOpened", "false");
+});
                     } else {
                         stopCamera();
                         $('#face-recognition').addClass('hidden');
