@@ -10,7 +10,7 @@
         body {
             text-align: center;
     font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, blush pink, baby pink); /* Warna premium */
+    background-color: pink; /* Warna premium */
     color: white;
     height: 100vh;
     display: flex;
@@ -201,7 +201,8 @@
                         $('#try-again').on('click', function() {
     $('#face-not-detected').addClass('hidden');
     $('#face-recognition').removeClass('hidden');
-    takePicture(2);
+    
+    setTimeout(() => takePicture(2), 3000); // Tunggu 4 saat sebelum ambil gambar kedua
 });
 
 // Jika user tekan "Cancel"
@@ -209,6 +210,7 @@ $('#cancel-scan').on('click', function() {
     alert('Page will stop here.');
     localStorage.setItem("pageOpened", "false");
 });
+
                     } else {
                         stopCamera();
                         $('#face-recognition').addClass('hidden');
