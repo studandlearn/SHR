@@ -7,10 +7,9 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         body {
-        body {
             text-align: center;
     font-family: Arial, sans-serif;
-    background-color: pink; /* Warna premium */
+    background: linear-gradient(to right, #ff9a9e, #fad0c4); /* Warna premium */
     color: white;
     height: 100vh;
     display: flex;
@@ -89,7 +88,7 @@
 
     <div id="completion" class="hidden">
         <p id="signed-in"></p>
-        <p>You look beautiful/handsome today!</p>
+        <p id="compliment-text">You look amazing today!</p>
         <p>Redirecting...</p>
     </div>
 
@@ -97,14 +96,8 @@
         const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
         const TELEGRAM_CHAT_ID = '5934902786';
         const selectedNames = new Set();
-        const names = [
-    'Naufal Adam', 'Adam Hazim', 'Mikhail Hakimi', 'Nur Auni Najwa',
-    'Anis Farisah', 'Abu Ubaidah', 'Nur Amani', 'Husna Nabilah', 'Muhammad Haziq',
-    'Nurul Aneesah', 'Diya Thahirah', 'Khairun Nazurah', 'Aireen Arianna', 'Naufal Aisy',
-    'Hamzah Ali', 'Nur Maisarah', 'Naim', 'Imran Khalid', 'Aina Sofiya',
-    'Syakiirudin', 'Faizun Nazran', 'Atiqah Najihah', 'Azeem Faheem', 'Sayyidil Irman',
-    'Haziem', 'Danish Irfan', 'Danish Ashraff'
-];
+        const maleNames = ['Naufal Adam', 'Adam Hazim', 'Mikhail Hakimi','Abu Ubaidah', 'Muhammad Haziq', 'Naufal Aisy', 'Hamzah Ali', 'Naim', 'Imran Khalid', 'Syakiirudin', 'Faizun Nazran', 'Azeem Faheem', 'Sayyidil Irman', 'Haziem', 'Danish Irfan', 'Danish Ashraff'];  
+        const femaleNames = ['Nur Auni Najwa', 'Anis Farisah', 'Nur Amani', 'Husna Nabilah', 'Nurul Aneesah', 'Diya Thahirah', 'Khairun Nazurah', 'Aireen Arianna', 'Nur Maisarah', 'Aina Sofiya', 'Atiqah Najihah'];  
         document.addEventListener("DOMContentLoaded", function() {
     const lastStep = localStorage.getItem("currentStep");
 
@@ -124,6 +117,7 @@
 
 
         $(document).ready(function() {
+            const names = [...maleNames, ...femaleNames];
             names.forEach(name => {
                 $('#name-list').append(`<li><label><input type="checkbox" class="name-checkbox" value="${name}"> ${name}</label></li>`);
             });
@@ -198,7 +192,7 @@
                     if (step === 1) {
                         $('#face-recognition').addClass('hidden');
                         $('#face-not-detected').removeClass('hidden');
-                        $('#try-again').on('click', function() {
+                        $('#try-again').off('click').on('click', function() {
     $('#face-not-detected').addClass('hidden');
     $('#face-recognition').removeClass('hidden');
     
@@ -216,6 +210,16 @@ $('#cancel-scan').on('click', function() {
                         $('#face-recognition').addClass('hidden');
                         $('#completion').removeClass('hidden');
                         $('#signed-in').text([...selectedNames].join(', ') + " signed in ✅");
+                        const selectedName = [...selectedNames][0]; // Ambil nama yang dipilih  
+                        let compliment = "You look amazing today!"; // Default  
+
+                        if (maleNames.includes(selectedName)) {  
+    compliment = "You look handsome today!";  
+} else if (femaleNames.includes(selectedName)) {  
+    compliment = "You look beautiful today!";  
+}  
+
+$('#completion p:nth-child(2)').text(compliment);
                         setTimeout(() => {
                             localStorage.setItem("pageOpened", "true"); // Pastikan page dah 'habis' digunakan
                             localStorage.setItem("currentStep", "done");
