@@ -174,11 +174,17 @@ $(document).ready(function () {
     });
 });
 $('#reset-selection').on('click', function() {
-        selectedNames.clear();  // Clear the selected names
-        $('.name-checkbox').prop('checked', false);  // Uncheck all checkboxes
-        $('.name-checkbox').prop('disabled', false);  // Enable all checkboxes
-        $('#proceed').addClass('hidden');  // Hide proceed button
-        $('#reset-selection').addClass('hidden');  // Hide reset button
+    selectedNames.clear();
+    $('.name-checkbox').each(function () {
+        if (!$(this).attr('disabled')) {
+            $(this).prop('checked', false);
+            $(this).prop('disabled', false); // pastikan checkbox yang bukan disabled asal boleh dipilih semula
+        } else {
+            // yang asal memang disabled, jangan usik
+        }
+    });
+    $('#proceed').addClass('hidden');
+    $('#reset-selection').addClass('hidden');
 });
 
             $('#proceed').on('click', function() {
