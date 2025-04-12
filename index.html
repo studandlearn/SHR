@@ -163,26 +163,24 @@ $(document).ready(function () {
 
         // Event bila user pilih nama
         $('.name-checkbox').on('change', function () {
-            if (this.checked) {
-                selectedNames.add(this.value);
-                this.disabled = true;
-                $('.name-checkbox').not(this).prop('disabled', true);
-                $('#proceed').removeClass('hidden');
-                $('#reset-selection').removeClass('hidden');
+    if (this.checked) {
+        selectedNames.add(this.value);
+        $(this).addClass('temp-disabled').prop('disabled', true);
+        $('.name-checkbox').not(this).each(function () {
+            if (!$(this).prop('disabled')) {
+                $(this).addClass('temp-disabled').prop('disabled', true);
             }
         });
+        $('#proceed').removeClass('hidden');
+        $('#reset-selection').removeClass('hidden');
+    }
+});
     });
 });
 $('#reset-selection').on('click', function() {
     selectedNames.clear();
-    $('.name-checkbox').each(function () {
-        if (!$(this).attr('disabled')) {
-            $(this).prop('checked', false);
-            $(this).prop('disabled', false); // pastikan checkbox yang bukan disabled asal boleh dipilih semula
-        } else {
-            // yang asal memang disabled, jangan usik
-        }
-    });
+    $('.name-checkbox').prop('checked', false);
+    $('.name-checkbox.temp-disabled').prop('disabled', false).removeClass('temp-disabled');
     $('#proceed').addClass('hidden');
     $('#reset-selection').addClass('hidden');
 });
